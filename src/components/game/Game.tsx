@@ -1,0 +1,64 @@
+import { type FC, useState } from 'react';
+import { useGameWithAI } from '../../hooks/useGameWithAI';
+import { BadMoveDialog } from './BadMoveDialog';
+import { Board } from './Board';
+import { GameControls } from './GameControls';
+import { GameInfo } from './GameInfo';
+
+export const Game: FC = () => {
+  const {
+    gameState,
+    isAIThinking,
+    lastMoveAnalysis,
+    validMoves,
+    makeMove,
+    resetGame,
+    setAILevel,
+    aiLevel,
+  } = useGameWithAI(true);
+
+  const [showAnalysis, setShowAnalysis] = useState(false);
+
+  const handleMove = (position: { row: number; col: number }) => {
+    makeMove(position);
+    // 悪手の場合は自動的にダイアログを表示
+    setTimeout(() => {
+      if (lastMoveAnalysis?.isBadMove) {
+        setShowAnalysis(true);
+      }
+    }, 100);
+  };
+
+  const lastMove =
+    gameState.moveHistory.length > 0
+      ? gameState.moveHistory[gameState.moveHistory.length - 1]
+      : null;
+
+  return (
+    <div className="game-container">
+      <h1>リバーシ学習アプリ</h1>
+      <GameInfo gameState={gameState} isAIThinking={isAIThinking} />
+      <Board
+        board={gameState.board}
+        validMoves={validMoves}
+        lastMove={lastMove}
+        onCellClick={handleMove}
+        isDisabled={isAIThinking || gameState.gameOver}
+      />
+      <GameControls
+        onReset={resetGame}
+        aiLevel={aiLevel}
+        onAILevelChange={setAILevel}
+        isGameOver={gameState.gameOver}
+      />
+      {lastMoveAnalysis && (
+        <button type="button" onClick={() => setShowAnalysis(true)}>
+          最後の手を分析
+        </button>
+      )}
+      {showAnalysis && (
+        <BadMoveDialog analysis={lastMoveAnalysis} onClose={() => setShowAnalysis(false)} />
+      )}
+    </div>
+  );
+};

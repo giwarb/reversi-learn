@@ -1,0 +1,115 @@
+.board-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 50px);
+  grid-template-rows: repeat(8, 50px);
+  gap: 2px;
+  background-color: #2d4a2b;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.cell {
+  width: 50px;
+  height: 50px;
+  background-color: #3d5a3b;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.cell:hover:not(:disabled) {
+  background-color: #4d6a4b;
+}
+
+.cell.valid-move {
+  background-color: #5d7a5b;
+}
+
+.cell.valid-move::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+}
+
+.cell.last-move {
+  background-color: #7d8a5b;
+}
+
+.cell:disabled {
+  cursor: default;
+}
+
+.stone {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+}
+
+.stone.black {
+  background-color: #1a1a1a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.stone.white {
+  background-color: #f0f0f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.game-info {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  font-size: 1.2rem;
+}
+
+.current-player {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.player-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.player-indicator.black {
+  background-color: #1a1a1a;
+}
+
+.player-indicator.white {
+  background-color: #f0f0f0;
+}
+
+.score {
+  display: flex;
+  gap: 1rem;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}

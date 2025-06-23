@@ -5,38 +5,61 @@
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.game-container h1 {
+  margin-bottom: 1rem;
+  color: #333;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+button {
+  background-color: #4caf50;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
 }
 
-.card {
-  padding: 2em;
+button:hover:not(:disabled) {
+  background-color: #45a049;
 }
 
-.read-the-docs {
-  color: #888;
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.ai-level-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-level-control label {
+  font-weight: bold;
+}
+
+.ai-level-control select {
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: white;
+  cursor: pointer;
+}
+
+.ai-level-control select:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
 }
