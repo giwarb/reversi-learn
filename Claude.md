@@ -1,12 +1,60 @@
-# claude.md - Claude AI開発アシスタント仕様書
+# CLAUDE.md
 
-## 目的
-このドキュメントは、TypeScript + React SPAプロジェクトにおいて、Claude AIが開発支援を行う際の振る舞いと制約を定義します。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## プロジェクト概要
+
+リバーシ学習アプリ - 悪手を検出して改善点を学習できるリバーシゲーム
 
 ## プロジェクト前提条件
 - **技術スタック**: TypeScript, React, Vite, Vitest, React Router (Hash-based), Biome
 - **デプロイ先**: GitHub Pages
 - **開発手法**: GitHub Issue駆動開発
+
+## 主要コマンド
+
+```bash
+# 開発サーバー起動
+npm run dev
+
+# テスト実行
+npm test
+
+# ビルド
+npm run build
+
+# リント
+npm run lint
+
+# フォーマット
+npm run format
+```
+
+## アーキテクチャ
+
+### ゲームロジック (src/game/)
+- `board.ts`: ボード管理（8x8配列）
+- `rules.ts`: ゲームルール（有効手判定、石の反転）
+- `gameState.ts`: ゲーム状態管理
+- `badMoveDetector.ts`: 悪手検出機能
+
+### AI実装 (src/ai/)
+- `minimax.ts`: ミニマックス法（アルファベータ枝刈り付き）
+- `evaluation.ts`: 評価関数（位置評価、着手可能数、石数）
+- `evaluationReasons.ts`: 評価理由の類型化
+- `moveAnalyzer.ts`: 手の分析機能
+
+### UI/UX (src/components/game/)
+- `Board.tsx`: ゲームボード表示
+- `Game.tsx`: メインゲームコンポーネント
+- `BadMoveDialog.tsx`: 悪手説明ダイアログ
+- `GameInfo.tsx`: ゲーム情報表示
+- `GameControls.tsx`: ゲームコントロール
+
+### 重要な設計判断
+1. **探索深さ**: AIレベル1-6（探索深さ1-6）
+2. **悪手判定**: 評価値差50点以上を悪手と判定
+3. **評価理由**: 日本語で類型化された説明を提供
 
 ## Claudeの基本原則
 
