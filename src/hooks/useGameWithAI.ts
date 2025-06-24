@@ -23,6 +23,7 @@ export interface GameWithAIState {
   playerColor: Player;
   blackScore: number;
   whiteScore: number;
+  isPassTurn: boolean;
 }
 
 export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState => {
@@ -34,6 +35,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   const [badMoveDetector] = useState(() => new BadMoveDetector(aiLevel));
   const [previousGameState, setPreviousGameState] = useState<GameState | null>(null);
   const [playerColor, setPlayerColor] = useState<Player>('black');
+  const [isPassTurn, setIsPassTurn] = useState(false);
 
   const validMoves = getAllValidMoves(gameState.board, gameState.currentPlayer);
 
@@ -64,6 +66,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
       }
 
       setGameState(newState);
+      setIsPassTurn(false); // パスターンをリセット
 
       // AIの手番
       const aiColor = playerColor === 'black' ? 'white' : 'black';
@@ -91,6 +94,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     setLastMoveAnalysis(null);
     setIsAIThinking(false);
     setPreviousGameState(null);
+    setIsPassTurn(false);
   }, []);
 
   const resetGameWithColor = useCallback(
@@ -101,6 +105,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
       setLastMoveAnalysis(null);
       setIsAIThinking(false);
       setPreviousGameState(null);
+      setIsPassTurn(false);
 
       // 後手（白）を選んだ場合、AIに最初の一手を打たせる
       if (playAgainstAI && newPlayerColor === 'white') {
@@ -143,17 +148,40 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
 
   useEffect(() => {
     // パスの処理
-    if (validMoves.length === 0 && !gameState.gameOver) {
+    if (validMoves.length === 0 && !gameState.gameOver && !isAIThinking) {
       const opponent = gameState.currentPlayer === 'black' ? 'white' : 'black';
       const opponentMoves = getAllValidMoves(gameState.board, opponent);
 
       // 相手に有効な手がある場合のみ手番を切り替える
       if (opponentMoves.length > 0) {
-        const newState = {
-          ...gameState,
-          currentPlayer: opponent,
-        } as GameState;
-        setGameState(newState);
+        setIsPassTurn(true);
+
+        // パス表示のための遅延
+        setTimeout(() => {
+          const newState = {
+            ...gameState,
+            currentPlayer: opponent,
+          } as GameState;
+          setGameState(newState);
+          setIsPassTurn(false);
+
+          // パスの後、AIの手番になった場合
+          const aiColor = playerColor === 'black' ? 'white' : 'black';
+          if (playAgainstAI && opponent === aiColor) {
+            setIsAIThinking(true);
+
+            setTimeout(() => {
+              const aiMove = ai.getMove(gameState.board, aiColor);
+              if (aiMove) {
+                const aiNewState = playMove(newState, aiMove);
+                if (aiNewState) {
+                  setGameState(aiNewState);
+                }
+              }
+              setIsAIThinking(false);
+            }, 500);
+          }
+        }, 1500); // パス表示を見せるため1.5秒待つ
       } else {
         // 両方とも打てない場合はゲーム終了
         const counts = countPieces(gameState.board);
@@ -174,7 +202,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
         });
       }
     }
-  }, [gameState, validMoves.length]);
+  }, [gameState, validMoves.length, playAgainstAI, playerColor, ai, isAIThinking]);
 
   return {
     gameState,
@@ -191,5 +219,6 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     playerColor,
     blackScore,
     whiteScore,
+    isPassTurn,
   };
 };

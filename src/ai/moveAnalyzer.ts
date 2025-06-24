@@ -10,6 +10,9 @@ export interface MoveAnalysis {
   scoreDiff: number;
   reasons: string[];
   isBadMove: boolean;
+  rank?: number; // 順位（1が最善手）
+  totalMoves?: number; // 有効な手の総数
+  percentile?: number; // パーセンタイル（0-100）
 }
 
 export const analyzeBadMove = (
@@ -40,10 +43,11 @@ export const analyzeBadMove = (
     });
   }
 
+  // スコアで降順ソート
+  moveScores.sort((a, b) => b.score - a.score);
+
   // 最善手を見つける
-  const bestMove = moveScores.reduce((best, current) =>
-    current.score > best.score ? current : best
-  );
+  const bestMove = moveScores[0];
 
   // プレイヤーの手のスコアを見つける
   const playerScore = moveScores.find(
@@ -54,15 +58,43 @@ export const analyzeBadMove = (
     return null;
   }
 
+  // 同率を考慮した順位を計算
+  let playerRank = 1;
+  for (const move of moveScores) {
+    if (move.score > playerScore.score) {
+      playerRank++;
+    } else {
+      break;
+    }
+  }
+
+  // 同じスコアの手の数を数える
+  const sameScoreCount = moveScores.filter((m) => m.score === playerScore.score).length;
+
   const scoreDiff = bestMove.score - playerScore.score;
-  const isBadMove = scoreDiff > 50; // 50点以上の差があれば悪手
+  const totalMoves = moveScores.length;
+
+  // パーセンタイルの計算（同率の場合は最も良い順位で計算）
+  const percentile = ((totalMoves - playerRank + 1) / totalMoves) * 100;
+
+  // 上位20%に入らない場合は悪手
+  const isBadMove = percentile < 80; // 80パーセンタイル未満は悪手
 
   // 理由の分析
   const moveReasons = analyzeMove(board, playerMove, player);
   const reasons: string[] = [];
 
   if (isBadMove) {
-    reasons.push(`より良い手がありました（評価値差: ${scoreDiff.toFixed(0)}）`);
+    if (sameScoreCount > 1) {
+      reasons.push(`${totalMoves}手中${playerRank}位タイの手です（上位${percentile.toFixed(0)}%）`);
+    } else {
+      reasons.push(`${totalMoves}手中${playerRank}位の手です（上位${percentile.toFixed(0)}%）`);
+    }
+    if (percentile < 20) {
+      reasons.push('これは大悪手です！');
+    } else if (percentile < 50) {
+      reasons.push('より良い手を選ぶことをお勧めします。');
+    }
     reasons.push(`最善手: (${bestMove.position.row + 1}, ${bestMove.position.col + 1})`);
   }
 
@@ -78,6 +110,9 @@ export const analyzeBadMove = (
     scoreDiff,
     reasons,
     isBadMove,
+    rank: playerRank,
+    totalMoves,
+    percentile,
   };
 };
 

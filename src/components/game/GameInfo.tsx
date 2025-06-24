@@ -6,9 +6,15 @@ interface GameInfoProps {
   gameState: GameState;
   isAIThinking: boolean;
   playerColor?: Player;
+  isPassTurn?: boolean;
 }
 
-export const GameInfo: FC<GameInfoProps> = ({ gameState, isAIThinking, playerColor = 'black' }) => {
+export const GameInfo: FC<GameInfoProps> = ({
+  gameState,
+  isAIThinking,
+  playerColor = 'black',
+  isPassTurn = false,
+}) => {
   const counts = countPieces(gameState.board);
 
   const getPlayerText = () => {
@@ -17,6 +23,10 @@ export const GameInfo: FC<GameInfoProps> = ({ gameState, isAIThinking, playerCol
         return '引き分け';
       }
       return `${gameState.winner === 'black' ? '黒' : '白'}の勝利！`;
+    }
+
+    if (isPassTurn) {
+      return `${gameState.currentPlayer === 'black' ? '黒' : '白'}はパス`;
     }
 
     if (isAIThinking) {

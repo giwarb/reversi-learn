@@ -22,6 +22,7 @@ export const Game: FC = () => {
     playerColor,
     blackScore,
     whiteScore,
+    isPassTurn,
   } = useGameWithAI(true);
 
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -57,7 +58,12 @@ export const Game: FC = () => {
   return (
     <div className="game-container">
       <h1>リバーシ学習アプリ</h1>
-      <GameInfo gameState={gameState} isAIThinking={isAIThinking} playerColor={playerColor} />
+      <GameInfo
+        gameState={gameState}
+        isAIThinking={isAIThinking}
+        playerColor={playerColor}
+        isPassTurn={isPassTurn}
+      />
       <Board
         board={gameState.board}
         validMoves={validMoves}
