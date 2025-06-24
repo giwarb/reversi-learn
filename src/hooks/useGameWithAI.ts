@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { ReversiAI } from '../ai/ai';
 import type { BadMoveResult } from '../game/badMoveDetector';
 import { BadMoveDetector } from '../game/badMoveDetector';
+import { countPieces } from '../game/board';
 import { createInitialGameState, playMove } from '../game/gameState';
 import { getAllValidMoves } from '../game/rules';
-import type { GameState, Position } from '../game/types';
+import type { GameState, Player, Position } from '../game/types';
 
 export interface GameWithAIState {
   gameState: GameState;
@@ -105,11 +106,35 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   useEffect(() => {
     // パスの処理
     if (validMoves.length === 0 && !gameState.gameOver) {
-      const newState = {
-        ...gameState,
-        currentPlayer: gameState.currentPlayer === 'black' ? 'white' : 'black',
-      } as GameState;
-      setGameState(newState);
+      const opponent = gameState.currentPlayer === 'black' ? 'white' : 'black';
+      const opponentMoves = getAllValidMoves(gameState.board, opponent);
+
+      // 相手に有効な手がある場合のみ手番を切り替える
+      if (opponentMoves.length > 0) {
+        const newState = {
+          ...gameState,
+          currentPlayer: opponent,
+        } as GameState;
+        setGameState(newState);
+      } else {
+        // 両方とも打てない場合はゲーム終了
+        const counts = countPieces(gameState.board);
+        let winner: Player | 'draw' | null;
+
+        if (counts.black > counts.white) {
+          winner = 'black';
+        } else if (counts.white > counts.black) {
+          winner = 'white';
+        } else {
+          winner = 'draw';
+        }
+
+        setGameState({
+          ...gameState,
+          gameOver: true,
+          winner,
+        });
+      }
     }
   }, [gameState, validMoves.length]);
 
