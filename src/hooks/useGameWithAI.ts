@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ReversiAI } from '../ai/ai';
+import { evaluateBoard } from '../ai/evaluation';
 import type { BadMoveResult } from '../game/badMoveDetector';
 import { BadMoveDetector } from '../game/badMoveDetector';
 import { countPieces } from '../game/board';
@@ -20,6 +21,8 @@ export interface GameWithAIState {
   undoLastMove: () => void;
   canUndo: boolean;
   playerColor: Player;
+  blackScore: number;
+  whiteScore: number;
 }
 
 export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState => {
@@ -33,6 +36,10 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   const [playerColor, setPlayerColor] = useState<Player>('black');
 
   const validMoves = getAllValidMoves(gameState.board, gameState.currentPlayer);
+  
+  // 現在の盤面の評価値を計算
+  const blackScore = evaluateBoard(gameState.board, 'black');
+  const whiteScore = evaluateBoard(gameState.board, 'white');
 
   const makeMove = useCallback(
     async (position: Position) => {
@@ -182,5 +189,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     undoLastMove,
     canUndo: !!previousGameState && !isAIThinking,
     playerColor,
+    blackScore,
+    whiteScore,
   };
 };

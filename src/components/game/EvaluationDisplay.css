@@ -1,0 +1,112 @@
+.evaluation-display {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.evaluation-display h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.1em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-button {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #666;
+  background: white;
+  cursor: pointer;
+  font-size: 0.8em;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.help-button:hover {
+  background: #666;
+  color: white;
+}
+
+.score-numbers {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 15px;
+}
+
+.score-item {
+  text-align: center;
+}
+
+.score-label {
+  display: block;
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.score-value {
+  display: block;
+  font-size: 1.4em;
+  font-weight: bold;
+}
+
+.score-bar-container {
+  margin-bottom: 15px;
+}
+
+.score-bar {
+  height: 20px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.score-bar-black {
+  height: 100%;
+  background-color: #333;
+  transition: width 0.3s ease;
+}
+
+.score-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.player-scores {
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+}
+
+.player-score {
+  text-align: center;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.player-score.active {
+  background-color: #e3f2fd;
+  font-weight: bold;
+}
+
+.player-score span:first-child {
+  display: block;
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.player-score span:last-child {
+  font-size: 1.2em;
+}

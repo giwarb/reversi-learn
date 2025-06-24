@@ -3,6 +3,7 @@ import type { Player } from '../../game/types';
 import { useGameWithAI } from '../../hooks/useGameWithAI';
 import { BadMoveDialog } from './BadMoveDialog';
 import { Board } from './Board';
+import { EvaluationDisplay } from './EvaluationDisplay';
 import { GameControls } from './GameControls';
 import { GameInfo } from './GameInfo';
 import { PlayerColorDialog } from './PlayerColorDialog';
@@ -19,6 +20,8 @@ export const Game: FC = () => {
     aiLevel,
     undoLastMove,
     playerColor,
+    blackScore,
+    whiteScore,
   } = useGameWithAI(true);
 
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -61,6 +64,13 @@ export const Game: FC = () => {
         lastMove={lastMove}
         onCellClick={handleMove}
         isDisabled={isAIThinking || gameState.gameOver}
+      />
+      <EvaluationDisplay
+        board={gameState.board}
+        blackScore={blackScore}
+        whiteScore={whiteScore}
+        currentPlayer={gameState.currentPlayer}
+        playerColor={playerColor}
       />
       <GameControls
         onReset={handleResetClick}
