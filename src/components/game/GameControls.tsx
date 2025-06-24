@@ -26,7 +26,6 @@ export const GameControls: FC<GameControlsProps> = ({
           id={aiLevelId}
           value={aiLevel}
           onChange={(e) => onAILevelChange(Number(e.target.value))}
-          disabled={!isGameOver}
         >
           <option value={1}>1 (弱い)</option>
           <option value={2}>2</option>
