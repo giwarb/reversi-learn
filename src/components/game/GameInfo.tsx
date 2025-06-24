@@ -1,13 +1,14 @@
 import type { FC } from 'react';
 import { countPieces } from '../../game/board';
-import type { GameState } from '../../game/types';
+import type { GameState, Player } from '../../game/types';
 
 interface GameInfoProps {
   gameState: GameState;
   isAIThinking: boolean;
+  playerColor?: Player;
 }
 
-export const GameInfo: FC<GameInfoProps> = ({ gameState, isAIThinking }) => {
+export const GameInfo: FC<GameInfoProps> = ({ gameState, isAIThinking, playerColor = 'black' }) => {
   const counts = countPieces(gameState.board);
 
   const getPlayerText = () => {
@@ -34,6 +35,10 @@ export const GameInfo: FC<GameInfoProps> = ({ gameState, isAIThinking }) => {
       <div className="score">
         <span>黒: {counts.black}</span>
         <span>白: {counts.white}</span>
+      </div>
+      <div className="player-info">
+        <span>あなた: {playerColor === 'black' ? '黒' : '白'}</span>
+        <span>AI: {playerColor === 'black' ? '白' : '黒'}</span>
       </div>
     </div>
   );

@@ -1,7 +1,10 @@
 import { type FC, useId } from 'react';
 
+import type { Player } from '../../game/types';
+
 interface GameControlsProps {
   onReset: () => void;
+  onResetWithColor?: (color: Player) => void;
   aiLevel: number;
   onAILevelChange: (level: number) => void;
   isGameOver: boolean;
