@@ -85,3 +85,119 @@
   border-radius: 4px;
   margin: 1rem 0;
 }
+
+.mini-board {
+  margin: 1rem 0;
+}
+
+.board-grid {
+  display: inline-block;
+  background: #228b22;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.board-row {
+  display: flex;
+}
+
+.board-cell {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #1a6b1a;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.board-cell .stone {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+
+.board-cell .stone.black {
+  background: #333;
+}
+
+.board-cell .stone.white {
+  background: #fff;
+  border: 1px solid #ccc;
+}
+
+.highlight-player-move {
+  background: rgba(255, 0, 0, 0.3) !important;
+}
+
+.highlight-ai-recommendation {
+  background: rgba(0, 0, 255, 0.3) !important;
+}
+
+.highlight-danger {
+  background: rgba(255, 152, 0, 0.3) !important;
+}
+
+.highlight-opponent-response {
+  background: rgba(128, 0, 128, 0.3) !important;
+}
+
+.legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+}
+
+.explanation-text {
+  margin-top: 1rem;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.undo-button,
+.continue-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.undo-button {
+  background: #2196f3;
+  color: white;
+}
+
+.undo-button:hover {
+  background: #1976d2;
+}
+
+.continue-button {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.continue-button:hover {
+  background: #e0e0e0;
+}

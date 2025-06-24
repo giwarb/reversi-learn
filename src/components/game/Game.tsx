@@ -15,18 +15,22 @@ export const Game: FC = () => {
     resetGame,
     setAILevel,
     aiLevel,
+    undoLastMove,
   } = useGameWithAI(true);
 
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [shouldShowBadMoveDialog, setShouldShowBadMoveDialog] = useState(false);
 
   const handleMove = (position: { row: number; col: number }) => {
     makeMove(position);
     // 悪手の場合は自動的にダイアログを表示
-    setTimeout(() => {
-      if (lastMoveAnalysis?.isBadMove) {
-        setShowAnalysis(true);
-      }
-    }, 100);
+    setShouldShowBadMoveDialog(true);
+  };
+
+  const handleUndo = () => {
+    undoLastMove();
+    setShowAnalysis(false);
+    setShouldShowBadMoveDialog(false);
   };
 
   const lastMove =
@@ -56,8 +60,16 @@ export const Game: FC = () => {
           最後の手を分析
         </button>
       )}
-      {showAnalysis && (
-        <BadMoveDialog analysis={lastMoveAnalysis} onClose={() => setShowAnalysis(false)} />
+      {((shouldShowBadMoveDialog && lastMoveAnalysis?.isBadMove) || showAnalysis) && (
+        <BadMoveDialog
+          analysis={lastMoveAnalysis}
+          board={gameState.board}
+          onClose={() => {
+            setShowAnalysis(false);
+            setShouldShowBadMoveDialog(false);
+          }}
+          onUndo={handleUndo}
+        />
       )}
     </div>
   );

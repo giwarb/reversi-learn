@@ -121,4 +121,51 @@ describe('useGameWithAI', () => {
     expect(result.current.lastMoveAnalysis).not.toBeNull();
     expect(result.current.lastMoveAnalysis?.playerMove).toEqual({ row: 2, col: 3 });
   });
+
+  it('打ち直し機能が正しく動作する', () => {
+    const { result } = renderHook(() => useGameWithAI(false));
+
+    // 初期状態では打ち直しできない
+    expect(result.current.canUndo).toBe(false);
+
+    // 手を打つ
+    const initialBoard = [...result.current.gameState.board.map((row) => [...row])];
+    act(() => {
+      result.current.makeMove({ row: 2, col: 3 });
+    });
+
+    // 打ち直し可能になる
+    expect(result.current.canUndo).toBe(true);
+
+    // 打ち直す
+    act(() => {
+      result.current.undoLastMove();
+    });
+
+    // 盤面が元に戻る
+    expect(result.current.gameState.board).toEqual(initialBoard);
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.lastMoveAnalysis).toBeNull();
+  });
+
+  it('AI思考中は打ち直しできない', async () => {
+    const { result } = renderHook(() => useGameWithAI(true));
+
+    // 手を打つとAIが思考開始
+    act(() => {
+      result.current.makeMove({ row: 2, col: 3 });
+    });
+
+    // AI思考中
+    expect(result.current.isAIThinking).toBe(true);
+    expect(result.current.canUndo).toBe(false);
+
+    // AIの思考が終わるまで待つ
+    await vi.waitFor(
+      () => {
+        expect(result.current.isAIThinking).toBe(false);
+      },
+      { timeout: 1000 }
+    );
+  });
 });

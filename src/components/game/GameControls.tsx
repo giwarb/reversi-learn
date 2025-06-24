@@ -11,7 +11,7 @@ export const GameControls: FC<GameControlsProps> = ({
   onReset,
   aiLevel,
   onAILevelChange,
-  isGameOver,
+  isGameOver: _isGameOver,
 }) => {
   const aiLevelId = useId();
 

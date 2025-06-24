@@ -1,4 +1,5 @@
 import { ReversiAI } from '../ai/ai';
+import { analyzeDetailedBadMove, type DetailedBadMoveAnalysis } from '../ai/badMoveAnalyzer';
 import { findBestMove } from '../ai/minimax';
 import { analyzeBadMove, compareMovesWithAI } from '../ai/moveAnalyzer';
 import type { Board, GameState, Player, Position } from './types';
@@ -9,6 +10,7 @@ export interface BadMoveResult {
   aiRecommendation: Position | null;
   explanation: string;
   scoreDifference: number;
+  detailedAnalysis?: DetailedBadMoveAnalysis;
 }
 
 export class BadMoveDetector {
@@ -41,17 +43,44 @@ export class BadMoveDetector {
     // 悪手かどうかを判定
     const isBadMove = analysis.scoreDiff > this.threshold;
 
+    // 詳細な分析を実行
+    let detailedAnalysis: DetailedBadMoveAnalysis | undefined;
+    if (isBadMove) {
+      detailedAnalysis = analyzeDetailedBadMove(
+        boardBeforeMove,
+        playerMove,
+        player,
+        this.ai.getDepth()
+      );
+    }
+
     // 説明文を生成
     let explanation = '';
-    if (isBadMove) {
+    if (isBadMove && detailedAnalysis) {
       explanation = '悪手です！\n\n';
-      explanation += compareMovesWithAI(boardBeforeMove, playerMove, aiRecommendation, player);
 
-      if (analysis.reasons.length > 0) {
-        explanation += '\n\n問題点：\n';
-        analysis.reasons.forEach((reason) => {
-          explanation += `・${reason}\n`;
+      // 具体的な影響を説明
+      if (detailedAnalysis.impacts.length > 0) {
+        explanation += '問題点：\n';
+        detailedAnalysis.impacts.forEach((impact) => {
+          explanation += `・${impact.description}\n`;
         });
+        explanation += '\n';
+      }
+
+      // 将来の影響
+      if (detailedAnalysis.futureConsequences.length > 0) {
+        explanation += '結果として：\n';
+        detailedAnalysis.futureConsequences.forEach((consequence) => {
+          explanation += `・${consequence}\n`;
+        });
+        explanation += '\n';
+      }
+
+      // AIの推奨手
+      if (aiRecommendation) {
+        explanation += `AIの推奨手: (${aiRecommendation.row + 1}, ${aiRecommendation.col + 1})\n`;
+        explanation += `評価値の差: ${detailedAnalysis.scoreDifference.toFixed(0)}点`;
       }
     } else if (analysis.scoreDiff > this.threshold / 2) {
       explanation = 'より良い手がありました。\n\n';
@@ -66,6 +95,7 @@ export class BadMoveDetector {
       aiRecommendation,
       explanation: explanation.trim(),
       scoreDifference: analysis.scoreDiff,
+      detailedAnalysis,
     };
   }
 

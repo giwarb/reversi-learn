@@ -15,6 +15,8 @@ export interface GameWithAIState {
   resetGame: () => void;
   setAILevel: (level: number) => void;
   aiLevel: number;
+  undoLastMove: () => void;
+  canUndo: boolean;
 }
 
 export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState => {
@@ -24,6 +26,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   const [aiLevel, setAILevel] = useState(4);
   const [ai] = useState(() => new ReversiAI({ maxDepth: aiLevel }));
   const [badMoveDetector] = useState(() => new BadMoveDetector(aiLevel));
+  const [previousGameState, setPreviousGameState] = useState<GameState | null>(null);
 
   const validMoves = getAllValidMoves(gameState.board, gameState.currentPlayer);
 
@@ -35,6 +38,9 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
       const newState = playMove(gameState, position);
 
       if (!newState) return;
+
+      // 現在の状態を保存（打ち直し用）
+      setPreviousGameState(gameState);
 
       // 悪手検出（人間のプレイヤーの手のみ）
       if (gameState.currentPlayer === 'black') {
@@ -72,7 +78,16 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     setGameState(createInitialGameState());
     setLastMoveAnalysis(null);
     setIsAIThinking(false);
+    setPreviousGameState(null);
   }, []);
+
+  const undoLastMove = useCallback(() => {
+    if (previousGameState && !isAIThinking) {
+      setGameState(previousGameState);
+      setLastMoveAnalysis(null);
+      setPreviousGameState(null);
+    }
+  }, [previousGameState, isAIThinking]);
 
   const handleSetAILevel = useCallback(
     (level: number) => {
@@ -107,5 +122,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     resetGame,
     setAILevel: handleSetAILevel,
     aiLevel,
+    undoLastMove,
+    canUndo: !!previousGameState && !isAIThinking,
   };
 };
