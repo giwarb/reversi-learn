@@ -7,29 +7,30 @@ describe('EvaluationDisplay', () => {
     render(
       <EvaluationDisplay
         board={[]}
-        blackScore={50}
-        whiteScore={30}
+        blackScore={20}
+        whiteScore={0}
         currentPlayer="black"
         playerColor="black"
       />
     );
 
-    // 複数の要素があるため、より具体的に探す
-    const scoreItems = screen.getAllByText('50');
-    expect(scoreItems.length).toBeGreaterThan(0);
-    
-    const whiteScoreItems = screen.getAllByText('30');
-    expect(whiteScoreItems.length).toBeGreaterThan(0);
-    
-    expect(screen.getByText('+20')).toBeInTheDocument(); // 差分
+    // 正規化されたスコア（黒有利の場合）
+    // blackScore=20, whiteScore=0の差20は、黒55、白45程度になる
+    const blackScores = screen.getAllByText('55');
+    const whiteScores = screen.getAllByText('45');
+    expect(blackScores.length).toBeGreaterThan(0);
+    expect(whiteScores.length).toBeGreaterThan(0);
+
+    // 差分（絶対値）
+    expect(screen.getByText('10')).toBeInTheDocument();
   });
 
   it('評価値の差に応じて適切な優劣テキストを表示', () => {
     const { rerender } = render(
       <EvaluationDisplay
         board={[]}
-        blackScore={45}
-        whiteScore={40}
+        blackScore={0}
+        whiteScore={0}
         currentPlayer="black"
         playerColor="black"
       />
@@ -40,8 +41,8 @@ describe('EvaluationDisplay', () => {
     rerender(
       <EvaluationDisplay
         board={[]}
-        blackScore={60}
-        whiteScore={40}
+        blackScore={30}
+        whiteScore={0}
         currentPlayer="black"
         playerColor="black"
       />
@@ -52,22 +53,22 @@ describe('EvaluationDisplay', () => {
     rerender(
       <EvaluationDisplay
         board={[]}
-        blackScore={20}
-        whiteScore={60}
+        blackScore={0}
+        whiteScore={80}
         currentPlayer="black"
         playerColor="black"
       />
     );
 
-    expect(screen.getByText('白有利')).toBeInTheDocument();
+    expect(screen.getByText('白優勢')).toBeInTheDocument();
   });
 
   it('プレイヤーとAIのスコアを正しく表示', () => {
     render(
       <EvaluationDisplay
         board={[]}
-        blackScore={50}
-        whiteScore={30}
+        blackScore={20}
+        whiteScore={0}
         currentPlayer="white"
         playerColor="white"
       />
@@ -76,8 +77,8 @@ describe('EvaluationDisplay', () => {
     const playerScore = screen.getByText('あなた').parentElement;
     const aiScore = screen.getByText('AI').parentElement;
 
-    expect(playerScore).toHaveTextContent('30'); // プレイヤーは白
-    expect(aiScore).toHaveTextContent('50'); // AIは黒
+    expect(playerScore).toHaveTextContent('45'); // プレイヤーは白（正規化後）
+    expect(aiScore).toHaveTextContent('55'); // AIは黒（正規化後）
   });
 
   it('現在のプレイヤーをアクティブ表示', () => {
@@ -109,7 +110,7 @@ describe('EvaluationDisplay', () => {
     const helpButton = screen.getByRole('button', { name: '?' });
     expect(helpButton).toHaveAttribute(
       'title',
-      '評価値は盤面の有利さを数値化したものです。プラスは黒有利、マイナスは白有利を示します。'
+      '評価値は盤面の有利さを数値化したものです。50が均衡状態で、100に近いほど有利、0に近いほど不利を示します。'
     );
   });
 });

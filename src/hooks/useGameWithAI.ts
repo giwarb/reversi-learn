@@ -36,7 +36,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   const [playerColor, setPlayerColor] = useState<Player>('black');
 
   const validMoves = getAllValidMoves(gameState.board, gameState.currentPlayer);
-  
+
   // 現在の盤面の評価値を計算
   const blackScore = evaluateBoard(gameState.board, 'black');
   const whiteScore = evaluateBoard(gameState.board, 'white');
