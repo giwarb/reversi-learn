@@ -25,8 +25,6 @@ export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
   // スコアバーの幅を計算（0-100%）
   const blackPercentage = blackScore;
 
-  const advantageText = getAdvantageText(blackScore, whiteScore);
-
   return (
     <div className="evaluation-display">
       <h3>
@@ -40,40 +38,34 @@ export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
         </button>
       </h3>
 
-      <div className="score-numbers">
-        <div className="score-item">
-          <span className="score-label">黒</span>
-          <span className="score-value">{blackScore.toFixed(0)}</span>
+      <div className="player-scores large">
+        <div className={`player-score ${currentPlayer === playerColor ? 'active' : ''}`}>
+          <span>あなた</span>
+          <span className="score-value">{playerScore.toFixed(1)}</span>
         </div>
-        <div className="score-item">
-          <span className="score-label">白</span>
-          <span className="score-value">{whiteScore.toFixed(0)}</span>
-        </div>
-        <div className="score-item">
-          <span className="score-label">差</span>
-          <span className="score-value">{Math.abs(blackScore - whiteScore).toFixed(0)}</span>
+        <div className={`player-score ${currentPlayer !== playerColor ? 'active' : ''}`}>
+          <span>AI</span>
+          <span className="score-value">{aiScore.toFixed(1)}</span>
         </div>
       </div>
 
       <div className="score-bar-container">
         <div className="score-bar">
-          <div className="score-bar-black" style={{ width: `${blackPercentage}%` }} />
+          <div
+            className="score-bar-player"
+            style={{
+              width: `${playerColor === 'black' ? blackPercentage : 100 - blackPercentage}%`,
+            }}
+          />
         </div>
         <div className="score-labels">
-          <span>黒</span>
-          <span>{advantageText}</span>
-          <span>白</span>
-        </div>
-      </div>
-
-      <div className="player-scores">
-        <div className={`player-score ${currentPlayer === playerColor ? 'active' : ''}`}>
           <span>あなた</span>
-          <span>{playerScore.toFixed(0)}</span>
-        </div>
-        <div className={`player-score ${currentPlayer !== playerColor ? 'active' : ''}`}>
+          <span>
+            {playerColor === 'black'
+              ? getAdvantageText(blackScore, whiteScore)
+              : getAdvantageText(whiteScore, blackScore)}
+          </span>
           <span>AI</span>
-          <span>{aiScore.toFixed(0)}</span>
         </div>
       </div>
     </div>

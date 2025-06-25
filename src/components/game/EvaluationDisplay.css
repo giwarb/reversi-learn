@@ -67,9 +67,9 @@
   position: relative;
 }
 
-.score-bar-black {
+.score-bar-player {
   height: 100%;
-  background-color: #333;
+  background-color: #2196f3;
   transition: width 0.3s ease;
 }
 
@@ -86,6 +86,17 @@
   justify-content: space-around;
   border-top: 1px solid #ddd;
   padding-top: 10px;
+}
+
+.player-scores.large {
+  border-top: none;
+  padding-top: 0;
+  margin-bottom: 15px;
+}
+
+.player-scores.large .score-value {
+  font-size: 1.8em;
+  font-weight: bold;
 }
 
 .player-score {

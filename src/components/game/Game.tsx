@@ -7,6 +7,7 @@ import { EvaluationDisplay } from './EvaluationDisplay';
 import { GameControls } from './GameControls';
 import { GameInfo } from './GameInfo';
 import { PlayerColorDialog } from './PlayerColorDialog';
+import './Game.css';
 
 export const Game: FC = () => {
   const {
@@ -19,6 +20,7 @@ export const Game: FC = () => {
     setAILevel,
     aiLevel,
     undoLastMove,
+    canUndo,
     playerColor,
     blackScore,
     whiteScore,
@@ -55,6 +57,25 @@ export const Game: FC = () => {
       ? gameState.moveHistory[gameState.moveHistory.length - 1]
       : null;
 
+  // 最後の手を打つ前の盤面を取得
+  const boardBeforeLastMove = (() => {
+    if (gameState.fullMoveHistory.length === 0) return null;
+    
+    // プレイヤーが最後に打った手を探す
+    let playerMoveIndex = gameState.fullMoveHistory.length - 1;
+    
+    // 最後のエントリがAIの手の場合、その前のプレイヤーの手を探す
+    while (playerMoveIndex >= 0) {
+      const entry = gameState.fullMoveHistory[playerMoveIndex];
+      if (entry.player === playerColor && entry.type === 'move') {
+        return entry.boardBefore;
+      }
+      playerMoveIndex--;
+    }
+    
+    return null;
+  })();
+
   return (
     <div className="game-container">
       <h1>リバーシ学習アプリ</h1>
@@ -84,15 +105,25 @@ export const Game: FC = () => {
         onAILevelChange={setAILevel}
         isGameOver={gameState.gameOver}
       />
-      {lastMoveAnalysis && (
-        <button type="button" onClick={() => setShowAnalysis(true)}>
-          最後の手を分析
-        </button>
-      )}
-      {((shouldShowBadMoveDialog && lastMoveAnalysis?.isBadMove) || showAnalysis) && (
+      <div className="game-actions">
+        {canUndo && (
+          <button type="button" onClick={handleUndo} className="undo-button">
+            一手戻る
+          </button>
+        )}
+        {lastMoveAnalysis && (
+          <button type="button" onClick={() => setShowAnalysis(true)} className="analysis-button">
+            最後の手を分析
+          </button>
+        )}
+      </div>
+      {((shouldShowBadMoveDialog && lastMoveAnalysis?.isBadMove) || showAnalysis) && boardBeforeLastMove && lastMoveAnalysis?.playerMove && (
         <BadMoveDialog
           analysis={lastMoveAnalysis}
-          board={gameState.board}
+          initialBoard={boardBeforeLastMove}
+          playerMove={lastMoveAnalysis.playerMove}
+          playerColor={playerColor}
+          aiDepth={aiLevel}
           onClose={() => {
             setShowAnalysis(false);
             setShouldShowBadMoveDialog(false);

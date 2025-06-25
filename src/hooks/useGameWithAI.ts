@@ -4,7 +4,7 @@ import { evaluateBoard } from '../ai/evaluation';
 import type { BadMoveResult } from '../game/badMoveDetector';
 import { BadMoveDetector } from '../game/badMoveDetector';
 import { countPieces } from '../game/board';
-import { createInitialGameState, playMove } from '../game/gameState';
+import { createInitialGameState, playMove, playPass } from '../game/gameState';
 import { getAllValidMoves } from '../game/rules';
 import type { GameState, Player, Position } from '../game/types';
 
@@ -24,6 +24,8 @@ export interface GameWithAIState {
   blackScore: number;
   whiteScore: number;
   isPassTurn: boolean;
+  beforeMoveBlackScore: number;
+  beforeMoveWhiteScore: number;
 }
 
 export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState => {
@@ -33,9 +35,10 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   const [aiLevel, setAILevel] = useState(4);
   const [ai] = useState(() => new ReversiAI({ maxDepth: aiLevel }));
   const [badMoveDetector] = useState(() => new BadMoveDetector(aiLevel));
-  const [previousGameState, setPreviousGameState] = useState<GameState | null>(null);
   const [playerColor, setPlayerColor] = useState<Player>('black');
   const [isPassTurn, setIsPassTurn] = useState(false);
+  const [beforeMoveBlackScore, setBeforeMoveBlackScore] = useState(0);
+  const [beforeMoveWhiteScore, setBeforeMoveWhiteScore] = useState(0);
 
   const validMoves = getAllValidMoves(gameState.board, gameState.currentPlayer);
 
@@ -52,15 +55,19 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
 
       if (!newState) return;
 
-      // 現在の状態を保存（打ち直し用）
-      setPreviousGameState(gameState);
-
       // 悪手検出（人間のプレイヤーの手のみ）
       if (gameState.currentPlayer === playerColor) {
+        // 手を打つ前の評価値を保存
+        const beforeBlackScore = evaluateBoard(boardBeforeMove, 'black');
+        const beforeWhiteScore = evaluateBoard(boardBeforeMove, 'white');
+        setBeforeMoveBlackScore(beforeBlackScore);
+        setBeforeMoveWhiteScore(beforeWhiteScore);
+
         const analysis = badMoveDetector.detectBadMove(
           boardBeforeMove,
           position,
-          gameState.currentPlayer
+          gameState.currentPlayer,
+          playerColor
         );
         setLastMoveAnalysis(analysis);
       }
@@ -93,7 +100,6 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     setGameState(createInitialGameState());
     setLastMoveAnalysis(null);
     setIsAIThinking(false);
-    setPreviousGameState(null);
     setIsPassTurn(false);
   }, []);
 
@@ -104,7 +110,6 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
       setGameState(initialState);
       setLastMoveAnalysis(null);
       setIsAIThinking(false);
-      setPreviousGameState(null);
       setIsPassTurn(false);
 
       // 後手（白）を選んだ場合、AIに最初の一手を打たせる
@@ -126,12 +131,64 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   );
 
   const undoLastMove = useCallback(() => {
-    if (previousGameState && !isAIThinking) {
-      setGameState(previousGameState);
-      setLastMoveAnalysis(null);
-      setPreviousGameState(null);
+    if (!gameState.fullMoveHistory.length || isAIThinking) return;
+
+    // プレイヤーの最後の手まで戻る
+    let targetIndex = gameState.fullMoveHistory.length - 1;
+
+    // AIの手を戻す（プレイヤーの手まで戻る）
+    while (targetIndex >= 0 && gameState.fullMoveHistory[targetIndex].player !== playerColor) {
+      targetIndex--;
     }
-  }, [previousGameState, isAIThinking]);
+
+    if (targetIndex < 0) return; // プレイヤーの手が見つからない場合
+
+    // プレイヤーの手の前の状態に戻る
+    targetIndex--;
+
+    if (targetIndex < 0) {
+      // 最初の状態に戻る
+      const newState = createInitialGameState();
+      setGameState(newState);
+      setLastMoveAnalysis(null);
+      setIsPassTurn(false);
+
+      if (playerColor === 'white') {
+        // プレイヤーが白の場合、AIの最初の手を打つ
+        setIsAIThinking(true);
+        setTimeout(() => {
+          const aiMove = ai.getMove(newState.board, 'black');
+          if (aiMove) {
+            const aiState = playMove(newState, aiMove);
+            if (aiState) {
+              setGameState(aiState);
+            }
+          }
+          setIsAIThinking(false);
+        }, 500);
+      }
+    } else {
+      // 指定されたインデックスの状態に戻る
+      const targetEntry = gameState.fullMoveHistory[targetIndex];
+      const newState = {
+        ...gameState,
+        board: targetEntry.boardAfter,
+        currentPlayer: (targetEntry.player === 'black' ? 'white' : 'black') as Player,
+        gameOver: false,
+        winner: null,
+        moveHistory: gameState.moveHistory.slice(
+          0,
+          gameState.fullMoveHistory
+            .slice(0, targetIndex + 1)
+            .filter((entry) => entry.type === 'move').length
+        ),
+        fullMoveHistory: gameState.fullMoveHistory.slice(0, targetIndex + 1),
+      };
+      setGameState(newState);
+      setLastMoveAnalysis(null);
+      setIsPassTurn(false);
+    }
+  }, [gameState, isAIThinking, playerColor, ai]);
 
   const handleSetAILevel = useCallback(
     (level: number) => {
@@ -158,10 +215,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
 
         // パス表示のための遅延
         setTimeout(() => {
-          const newState = {
-            ...gameState,
-            currentPlayer: opponent,
-          } as GameState;
+          const newState = playPass(gameState, gameState.currentPlayer);
           setGameState(newState);
           setIsPassTurn(false);
 
@@ -215,10 +269,13 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     setAILevel: handleSetAILevel,
     aiLevel,
     undoLastMove,
-    canUndo: !!previousGameState && !isAIThinking,
+    canUndo:
+      gameState.fullMoveHistory.some((entry) => entry.player === playerColor) && !isAIThinking,
     playerColor,
     blackScore,
     whiteScore,
     isPassTurn,
+    beforeMoveBlackScore,
+    beforeMoveWhiteScore,
   };
 };

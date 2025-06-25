@@ -4,7 +4,13 @@ import { evaluateBoard } from './evaluation';
 import { findBestMove } from './minimax';
 
 export interface BadMoveImpact {
-  type: 'corner_loss' | 'mobility_loss' | 'stable_loss' | 'position_weakness';
+  type:
+    | 'corner_loss'
+    | 'mobility_loss'
+    | 'stable_loss'
+    | 'position_weakness'
+    | 'edge_weakness'
+    | 'evaluation_loss';
   description: string;
   affectedPositions: Position[];
   severity: 'critical' | 'high' | 'medium' | 'low';
@@ -16,7 +22,13 @@ export interface DetailedBadMoveAnalysis {
   scoreDifference: number;
   impacts: BadMoveImpact[];
   opponentBestResponse: Position | null;
+  opponentBestResponseToRecommended: Position | null;
   futureConsequences: string[];
+  evaluationAfterPlayerMove: number;
+  evaluationAfterOpponentResponse: number;
+  evaluationChangeFromOpponent: number;
+  bestMoveEvaluationAfterOpponent: number;
+  bestMoveEvaluationChange: number;
 }
 
 const isCorner = (pos: Position): boolean => {
@@ -75,7 +87,7 @@ const analyzeCornerVulnerability = (
         if (opponentMoves.some((m) => m.row === corner.row && m.col === corner.col)) {
           return {
             type: 'corner_loss',
-            description: `相手に角(${corner.row + 1}, ${corner.col + 1})を取られる危険があります`,
+            description: `相手に角${String.fromCharCode('a'.charCodeAt(0) + corner.col)}${corner.row + 1}を取られる危険があります`,
             affectedPositions: [corner],
             severity: 'critical',
           };
@@ -164,6 +176,98 @@ const analyzePositionWeakness = (
   return null;
 };
 
+const analyzeEvaluationLoss = (
+  _board: Board,
+  _playerMove: Position,
+  bestMove: Position | null,
+  _player: Player,
+  scoreDifference: number
+): BadMoveImpact | null => {
+  if (!bestMove || scoreDifference < 10) return null;
+
+  // 評価値の差に基づいて説明を生成
+  let description = '';
+  let severity: 'high' | 'medium' | 'low' = 'low';
+
+  if (scoreDifference >= 50) {
+    description = `この手は最善手より${scoreDifference.toFixed(0)}点も評価が低いです`;
+    severity = 'high';
+  } else if (scoreDifference >= 30) {
+    description = `評価値が${scoreDifference.toFixed(0)}点低下します`;
+    severity = 'medium';
+  } else if (scoreDifference >= 10) {
+    description = `わずかに評価値が下がります（${scoreDifference.toFixed(0)}点）`;
+    severity = 'low';
+  }
+
+  if (description) {
+    return {
+      type: 'evaluation_loss',
+      description,
+      affectedPositions: [bestMove],
+      severity,
+    };
+  }
+
+  return null;
+};
+
+const analyzeEdgeWeakness = (
+  board: Board,
+  move: Position,
+  _player: Player
+): BadMoveImpact | null => {
+  // 辺のC-square（角から2つ目）の危険な位置
+  const dangerousEdgePositions = [
+    // 上辺
+    { row: 0, col: 1 },
+    { row: 0, col: 6 },
+    // 下辺
+    { row: 7, col: 1 },
+    { row: 7, col: 6 },
+    // 左辺
+    { row: 1, col: 0 },
+    { row: 6, col: 0 },
+    // 右辺
+    { row: 1, col: 7 },
+    { row: 6, col: 7 },
+  ];
+
+  const isDangerous = dangerousEdgePositions.some(
+    (pos) => pos.row === move.row && pos.col === move.col
+  );
+
+  if (isDangerous) {
+    // 対応する角が空いているか確認
+    const adjacentCorners: Position[] = [];
+
+    if (move.row === 0) {
+      if (move.col === 1 && board[0][0] === null) adjacentCorners.push({ row: 0, col: 0 });
+      if (move.col === 6 && board[0][7] === null) adjacentCorners.push({ row: 0, col: 7 });
+    } else if (move.row === 7) {
+      if (move.col === 1 && board[7][0] === null) adjacentCorners.push({ row: 7, col: 0 });
+      if (move.col === 6 && board[7][7] === null) adjacentCorners.push({ row: 7, col: 7 });
+    } else if (move.col === 0) {
+      if (move.row === 1 && board[0][0] === null) adjacentCorners.push({ row: 0, col: 0 });
+      if (move.row === 6 && board[7][0] === null) adjacentCorners.push({ row: 7, col: 0 });
+    } else if (move.col === 7) {
+      if (move.row === 1 && board[0][7] === null) adjacentCorners.push({ row: 0, col: 7 });
+      if (move.row === 6 && board[7][7] === null) adjacentCorners.push({ row: 7, col: 7 });
+    }
+
+    if (adjacentCorners.length > 0) {
+      return {
+        type: 'edge_weakness',
+        description: 'C-スクエア（辺の危険な位置）に打つと相手に角を取られやすくなります',
+        affectedPositions: adjacentCorners,
+        severity: 'high',
+      };
+    }
+  }
+
+  return null;
+};
+
 export const analyzeDetailedBadMove = (
   board: Board,
   playerMove: Position,
@@ -183,7 +287,13 @@ export const analyzeDetailedBadMove = (
       scoreDifference: 0,
       impacts: [],
       opponentBestResponse: null,
+      opponentBestResponseToRecommended: null,
       futureConsequences: [],
+      evaluationAfterPlayerMove: 0,
+      evaluationAfterOpponentResponse: 0,
+      evaluationChangeFromOpponent: 0,
+      bestMoveEvaluationAfterOpponent: 0,
+      bestMoveEvaluationChange: 0,
     };
   }
 
@@ -191,10 +301,12 @@ export const analyzeDetailedBadMove = (
   const playerScore = evaluateBoard(playerBoard, player);
 
   let bestScore = playerScore;
+  let bestMoveBoard: Board | null = null;
   if (bestMove) {
     const bestValidMove = getValidMove(board, bestMove, player);
     if (bestValidMove) {
-      bestScore = evaluateBoard(makeMove(board, bestValidMove, player), player);
+      bestMoveBoard = makeMove(board, bestValidMove, player);
+      bestScore = evaluateBoard(bestMoveBoard, player);
     }
   }
 
@@ -215,6 +327,20 @@ export const analyzeDetailedBadMove = (
   const positionImpact = analyzePositionWeakness(board, playerMove, player);
   if (positionImpact) impacts.push(positionImpact);
 
+  // 辺の弱さをチェック
+  const edgeImpact = analyzeEdgeWeakness(board, playerMove, player);
+  if (edgeImpact) impacts.push(edgeImpact);
+
+  // 評価値の損失をチェック
+  const evaluationImpact = analyzeEvaluationLoss(
+    board,
+    playerMove,
+    bestMove,
+    player,
+    scoreDifference
+  );
+  if (evaluationImpact) impacts.push(evaluationImpact);
+
   // 相手の最善応手を計算
   const opponent: Player = player === 'black' ? 'white' : 'black';
   const newBoard = makeMove(board, playerValidMove, player);
@@ -224,6 +350,10 @@ export const analyzeDetailedBadMove = (
   // 将来の影響を分析
   const futureConsequences: string[] = [];
 
+  // 相手の応手後の評価値を計算
+  let evaluationAfterOpponentResponse = playerScore;
+  let evaluationChangeFromOpponent = 0;
+
   if (opponentBestResponse) {
     if (isCorner(opponentBestResponse)) {
       futureConsequences.push('相手が角を取ることができます');
@@ -232,9 +362,38 @@ export const analyzeDetailedBadMove = (
     const opponentValidMove = getValidMove(newBoard, opponentBestResponse, opponent);
     if (opponentValidMove) {
       const afterOpponentBoard = makeMove(newBoard, opponentValidMove, opponent);
+      evaluationAfterOpponentResponse = evaluateBoard(afterOpponentBoard, player);
+      evaluationChangeFromOpponent = evaluationAfterOpponentResponse - playerScore;
+
       const playerFutureMoves = getAllValidMoves(afterOpponentBoard, player);
       if (playerFutureMoves.length < 3) {
         futureConsequences.push('次の手番で選択肢が大幅に制限されます');
+      }
+    }
+  }
+
+  // 最善手を打った場合の相手の応手後の評価値を計算
+  let bestMoveEvaluationAfterOpponent = bestScore;
+  let bestMoveEvaluationChange = 0;
+  let opponentBestResponseToRecommended: Position | null = null;
+
+  if (bestMoveBoard && bestMove) {
+    const opponentBestResponseToBestMove = findBestMove(bestMoveBoard, opponent, aiDepth - 1);
+    if (opponentBestResponseToBestMove) {
+      opponentBestResponseToRecommended = opponentBestResponseToBestMove.position;
+      const opponentValidMoveToBestMove = getValidMove(
+        bestMoveBoard,
+        opponentBestResponseToBestMove.position,
+        opponent
+      );
+      if (opponentValidMoveToBestMove) {
+        const afterOpponentBestMoveBoard = makeMove(
+          bestMoveBoard,
+          opponentValidMoveToBestMove,
+          opponent
+        );
+        bestMoveEvaluationAfterOpponent = evaluateBoard(afterOpponentBestMoveBoard, player);
+        bestMoveEvaluationChange = bestMoveEvaluationAfterOpponent - bestScore;
       }
     }
   }
@@ -245,6 +404,12 @@ export const analyzeDetailedBadMove = (
     scoreDifference,
     impacts,
     opponentBestResponse,
+    opponentBestResponseToRecommended,
     futureConsequences,
+    evaluationAfterPlayerMove: playerScore,
+    evaluationAfterOpponentResponse,
+    evaluationChangeFromOpponent,
+    bestMoveEvaluationAfterOpponent,
+    bestMoveEvaluationChange,
   };
 };

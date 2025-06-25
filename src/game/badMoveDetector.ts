@@ -2,6 +2,7 @@ import { ReversiAI } from '../ai/ai';
 import { analyzeDetailedBadMove, type DetailedBadMoveAnalysis } from '../ai/badMoveAnalyzer';
 import { findBestMove } from '../ai/minimax';
 import { analyzeBadMove, compareMovesWithAI } from '../ai/moveAnalyzer';
+import { getNormalizedScores } from '../utils/evaluationNormalizer';
 import type { Board, GameState, Player, Position } from './types';
 
 export interface BadMoveResult {
@@ -19,15 +20,18 @@ export interface BadMoveResult {
 export class BadMoveDetector {
   private ai: ReversiAI;
   private threshold: number;
-  private percentileThreshold: number;
 
-  constructor(aiDepth: number = 5, threshold: number = 50, percentileThreshold: number = 20) {
+  constructor(aiDepth: number = 5, threshold: number = 50) {
     this.ai = new ReversiAI({ maxDepth: aiDepth });
     this.threshold = threshold;
-    this.percentileThreshold = percentileThreshold; // 上位20%以外は悪手
   }
 
-  detectBadMove(boardBeforeMove: Board, playerMove: Position, player: Player): BadMoveResult {
+  detectBadMove(
+    boardBeforeMove: Board,
+    playerMove: Position,
+    player: Player,
+    playerColor: Player
+  ): BadMoveResult {
     // AIの推奨手を取得
     const aiEvaluation = findBestMove(boardBeforeMove, player, this.ai.getDepth());
     const aiRecommendation = aiEvaluation ? aiEvaluation.position : null;
@@ -48,16 +52,13 @@ export class BadMoveDetector {
     // 悪手かどうかを判定（順位ベース）
     const isBadMove = analysis.isBadMove;
 
-    // 詳細な分析を実行
-    let detailedAnalysis: DetailedBadMoveAnalysis | undefined;
-    if (isBadMove) {
-      detailedAnalysis = analyzeDetailedBadMove(
-        boardBeforeMove,
-        playerMove,
-        player,
-        this.ai.getDepth()
-      );
-    }
+    // 詳細な分析を実行（常に実行して理由を取得）
+    const detailedAnalysis = analyzeDetailedBadMove(
+      boardBeforeMove,
+      playerMove,
+      player,
+      this.ai.getDepth()
+    );
 
     // 説明文を生成
     let explanation = '';
@@ -76,19 +77,27 @@ export class BadMoveDetector {
       }
     }
 
-    if (isBadMove && detailedAnalysis) {
+    if (isBadMove) {
       if (analysis.percentile && analysis.percentile < 20) {
         explanation += '大悪手です！\n\n';
       } else {
         explanation += '悪手です！\n\n';
       }
 
-      // 具体的な影響を説明
+      // 具体的な影響を説明（必ず表示）
       if (detailedAnalysis.impacts.length > 0) {
         explanation += '問題点：\n';
         detailedAnalysis.impacts.forEach((impact) => {
           explanation += `・${impact.description}\n`;
         });
+        explanation += '\n';
+      } else {
+        // 具体的な影響が検出されない場合でも理由を表示
+        explanation += '問題点：\n';
+        explanation += `・この手は評価値が低く、より良い選択肢があります\n`;
+        if (analysis.scoreDiff > 0) {
+          explanation += `・AIの推奨手より${analysis.scoreDiff.toFixed(0)}点劣っています\n`;
+        }
         explanation += '\n';
       }
 
@@ -101,13 +110,99 @@ export class BadMoveDetector {
         explanation += '\n';
       }
 
-      // AIの推奨手
+      // AIの推奨手（必ず表示）
       if (aiRecommendation) {
-        explanation += `AIの推奨手: (${aiRecommendation.row + 1}, ${aiRecommendation.col + 1})\n`;
-        explanation += `評価値の差: ${detailedAnalysis.scoreDifference.toFixed(0)}点`;
+        const colLetter = String.fromCharCode('a'.charCodeAt(0) + aiRecommendation.col);
+        const rowNumber = aiRecommendation.row + 1;
+        explanation += `AIの推奨手: ${colLetter}${rowNumber}\n`;
+        explanation += `評価値の差: ${detailedAnalysis.scoreDifference.toFixed(0)}点\n\n`;
+
+        // 相手の応手による評価値変化
+        if (detailedAnalysis.opponentBestResponse) {
+          const oppColLetter = String.fromCharCode(
+            'a'.charCodeAt(0) + detailedAnalysis.opponentBestResponse.col
+          );
+          const oppRowNumber = detailedAnalysis.opponentBestResponse.row + 1;
+
+          // プレイヤーの色はplayerColor引数から取得
+
+          // あなたの手の評価値（正規化）
+          const playerMoveScores = getNormalizedScores(
+            playerColor === 'black'
+              ? detailedAnalysis.evaluationAfterPlayerMove
+              : -detailedAnalysis.evaluationAfterPlayerMove,
+            playerColor === 'white'
+              ? detailedAnalysis.evaluationAfterPlayerMove
+              : -detailedAnalysis.evaluationAfterPlayerMove
+          );
+          const afterOpponentScores = getNormalizedScores(
+            playerColor === 'black'
+              ? detailedAnalysis.evaluationAfterOpponentResponse
+              : -detailedAnalysis.evaluationAfterOpponentResponse,
+            playerColor === 'white'
+              ? detailedAnalysis.evaluationAfterOpponentResponse
+              : -detailedAnalysis.evaluationAfterOpponentResponse
+          );
+
+          // 推奨手の評価値（正規化）
+          const bestMoveInitialScore =
+            detailedAnalysis.evaluationAfterPlayerMove + detailedAnalysis.scoreDifference;
+          const bestMoveScores = getNormalizedScores(
+            playerColor === 'black' ? bestMoveInitialScore : -bestMoveInitialScore,
+            playerColor === 'white' ? bestMoveInitialScore : -bestMoveInitialScore
+          );
+          const bestMoveAfterScores = getNormalizedScores(
+            playerColor === 'black'
+              ? detailedAnalysis.bestMoveEvaluationAfterOpponent
+              : -detailedAnalysis.bestMoveEvaluationAfterOpponent,
+            playerColor === 'white'
+              ? detailedAnalysis.bestMoveEvaluationAfterOpponent
+              : -detailedAnalysis.bestMoveEvaluationAfterOpponent
+          );
+
+          const playerScore =
+            playerColor === 'black' ? playerMoveScores.blackScore : playerMoveScores.whiteScore;
+          const aiScore =
+            playerColor === 'black' ? playerMoveScores.whiteScore : playerMoveScores.blackScore;
+          const playerAfterScore =
+            playerColor === 'black'
+              ? afterOpponentScores.blackScore
+              : afterOpponentScores.whiteScore;
+          const aiAfterScore =
+            playerColor === 'black'
+              ? afterOpponentScores.whiteScore
+              : afterOpponentScores.blackScore;
+
+          const bestPlayerScore =
+            playerColor === 'black' ? bestMoveScores.blackScore : bestMoveScores.whiteScore;
+          const bestAiScore =
+            playerColor === 'black' ? bestMoveScores.whiteScore : bestMoveScores.blackScore;
+          const bestPlayerAfterScore =
+            playerColor === 'black'
+              ? bestMoveAfterScores.blackScore
+              : bestMoveAfterScores.whiteScore;
+          const bestAiAfterScore =
+            playerColor === 'black'
+              ? bestMoveAfterScores.whiteScore
+              : bestMoveAfterScores.blackScore;
+
+          explanation += `相手の最善応手: ${oppColLetter}${oppRowNumber}\n`;
+          explanation += `あなたの手: ${playerScore.toFixed(1)} vs ${aiScore.toFixed(1)} → ${playerAfterScore.toFixed(1)} vs ${aiAfterScore.toFixed(1)}\n`;
+          explanation += `推奨手なら: ${bestPlayerScore.toFixed(1)} vs ${bestAiScore.toFixed(1)} → ${bestPlayerAfterScore.toFixed(1)} vs ${bestAiAfterScore.toFixed(1)}`;
+        }
       }
     } else if (analysis.percentile && analysis.percentile < 50) {
       explanation += 'より良い手がありました。\n\n';
+
+      // 50パーセンタイル未満でも問題点を表示
+      if (detailedAnalysis.impacts.length > 0) {
+        explanation += '注意点：\n';
+        detailedAnalysis.impacts.forEach((impact) => {
+          explanation += `・${impact.description}\n`;
+        });
+        explanation += '\n';
+      }
+
       explanation += compareMovesWithAI(boardBeforeMove, playerMove, aiRecommendation, player);
     } else {
       explanation += compareMovesWithAI(boardBeforeMove, playerMove, aiRecommendation, player);
@@ -126,14 +221,14 @@ export class BadMoveDetector {
     };
   }
 
-  analyzeGameHistory(gameState: GameState): BadMoveResult[] {
+  analyzeGameHistory(gameState: GameState, playerColor: Player): BadMoveResult[] {
     const results: BadMoveResult[] = [];
     const currentBoard = gameState.board;
     let currentPlayer: Player = 'black';
 
     // ゲーム履歴を再現しながら各手を分析
     for (const move of gameState.moveHistory) {
-      const result = this.detectBadMove(currentBoard, move, currentPlayer);
+      const result = this.detectBadMove(currentBoard, move, currentPlayer, playerColor);
       results.push(result);
 
       // 次の状態へ

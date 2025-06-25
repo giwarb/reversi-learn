@@ -11,7 +11,7 @@ describe('BadMoveDetector', () => {
   it('有効な手を分析できる', () => {
     const detector = new BadMoveDetector(3, 50);
     const board = createInitialBoard();
-    const result = detector.detectBadMove(board, { row: 2, col: 3 }, 'black');
+    const result = detector.detectBadMove(board, { row: 2, col: 3 }, 'black', 'black');
 
     expect(result.isBadMove).toBeDefined();
     expect(result.playerMove).toEqual({ row: 2, col: 3 });
@@ -21,7 +21,7 @@ describe('BadMoveDetector', () => {
   it('無効な手を検出できる', () => {
     const detector = new BadMoveDetector(3, 50);
     const board = createInitialBoard();
-    const result = detector.detectBadMove(board, { row: 0, col: 0 }, 'black');
+    const result = detector.detectBadMove(board, { row: 0, col: 0 }, 'black', 'black');
 
     expect(result.isBadMove).toBe(false);
     expect(result.explanation).toContain('無効な手');
@@ -54,7 +54,7 @@ describe('BadMoveDetector', () => {
     const board = createInitialBoard();
 
     // AIが選ぶであろう手を事前に確認
-    const result = detector.detectBadMove(board, { row: 2, col: 3 }, 'black');
+    const result = detector.detectBadMove(board, { row: 2, col: 3 }, 'black', 'black');
 
     // AIの推奨手と同じかどうかで判定が変わる
     if (

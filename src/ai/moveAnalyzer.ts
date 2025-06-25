@@ -95,7 +95,9 @@ export const analyzeBadMove = (
     } else if (percentile < 50) {
       reasons.push('より良い手を選ぶことをお勧めします。');
     }
-    reasons.push(`最善手: (${bestMove.position.row + 1}, ${bestMove.position.col + 1})`);
+    const bestColLetter = String.fromCharCode('a'.charCodeAt(0) + bestMove.position.col);
+    const bestRowNumber = bestMove.position.row + 1;
+    reasons.push(`最善手: ${bestColLetter}${bestRowNumber}`);
   }
 
   moveReasons.forEach((reason) => {
@@ -133,7 +135,9 @@ export const compareMovesWithAI = (
   const playerReasons = analyzeMove(board, playerMove, player);
   const aiReasons = analyzeMove(board, aiMove, player);
 
-  let comparison = `AIの推奨手: (${aiMove.row + 1}, ${aiMove.col + 1})\n\n`;
+  const aiColLetter = String.fromCharCode('a'.charCodeAt(0) + aiMove.col);
+  const aiRowNumber = aiMove.row + 1;
+  let comparison = `AIの推奨手: ${aiColLetter}${aiRowNumber}\n\n`;
 
   comparison += 'あなたの手の分析:\n';
   if (playerReasons.length === 0) {

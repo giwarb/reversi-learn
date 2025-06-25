@@ -36,6 +36,7 @@ export const minimax = (
         gameOver: false,
         winner: null,
         moveHistory: [],
+        fullMoveHistory: [],
       };
       const finalState = checkGameOver(tempState);
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createInitialBoard } from './board';
 import { BadMoveDetector } from './badMoveDetector';
+import { createInitialBoard } from './board';
 import { getAllValidMoves } from './rules';
 
 describe('BadMoveDetector - パーセンタイルベース判定', () => {
@@ -13,7 +13,7 @@ describe('BadMoveDetector - パーセンタイルベース判定', () => {
 
     // すべての手を分析
     const results = validMoves.map((move) =>
-      detector.detectBadMove(board, { row: move.row, col: move.col }, 'black')
+      detector.detectBadMove(board, { row: move.row, col: move.col }, 'black', 'black')
     );
 
     // 順位でソート
@@ -33,7 +33,7 @@ describe('BadMoveDetector - パーセンタイルベース判定', () => {
 
     const validMoves = getAllValidMoves(board, 'black');
     const results = validMoves.map((move) =>
-      detector.detectBadMove(board, { row: move.row, col: move.col }, 'black')
+      detector.detectBadMove(board, { row: move.row, col: move.col }, 'black', 'black')
     );
 
     // パーセンタイルでソート
@@ -65,6 +65,7 @@ describe('BadMoveDetector - パーセンタイルベース判定', () => {
     const result = detector.detectBadMove(
       board,
       { row: firstMove.row, col: firstMove.col },
+      'black',
       'black'
     );
 
@@ -80,7 +81,7 @@ describe('BadMoveDetector - パーセンタイルベース判定', () => {
 
     const validMoves = getAllValidMoves(board, 'black');
     const results = validMoves.map((move) =>
-      detector.detectBadMove(board, { row: move.row, col: move.col }, 'black')
+      detector.detectBadMove(board, { row: move.row, col: move.col }, 'black', 'black')
     );
 
     results.sort((a, b) => (a.rank || 0) - (b.rank || 0));
@@ -107,7 +108,12 @@ describe('BadMoveDetector - パーセンタイルベース判定', () => {
 
     const validMoves = getAllValidMoves(board, 'black');
     const lastMove = validMoves[validMoves.length - 1];
-    const result = detector.detectBadMove(board, { row: lastMove.row, col: lastMove.col }, 'black');
+    const result = detector.detectBadMove(
+      board,
+      { row: lastMove.row, col: lastMove.col },
+      'black',
+      'black'
+    );
 
     expect(result.explanation).toContain('手中');
     expect(result.explanation).toContain('位');
@@ -121,7 +127,7 @@ describe('BadMoveDetector - パーセンタイルベース判定', () => {
 
     const validMoves = getAllValidMoves(board, 'black');
     const results = validMoves.map((move) =>
-      detector.detectBadMove(board, { row: move.row, col: move.col }, 'black')
+      detector.detectBadMove(board, { row: move.row, col: move.col }, 'black', 'black')
     );
 
     // パーセンタイルが20%未満の手を見つける
@@ -138,7 +144,7 @@ describe('BadMoveDetector - パーセンタイルベース判定', () => {
 
     const validMoves = getAllValidMoves(board, 'black');
     const results = validMoves.map((move) =>
-      detector.detectBadMove(board, { row: move.row, col: move.col }, 'black')
+      detector.detectBadMove(board, { row: move.row, col: move.col }, 'black', 'black')
     );
 
     // スコアでグループ化

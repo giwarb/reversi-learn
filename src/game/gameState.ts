@@ -9,6 +9,7 @@ export const createInitialGameState = (): GameState => {
     gameOver: false,
     winner: null,
     moveHistory: [],
+    fullMoveHistory: [],
   };
 };
 
@@ -66,7 +67,35 @@ export const playMove = (state: GameState, position: Position): GameState | null
     gameOver: false,
     winner: null,
     moveHistory: [...state.moveHistory, position],
+    fullMoveHistory: [
+      ...state.fullMoveHistory,
+      {
+        type: 'move',
+        position,
+        player: state.currentPlayer,
+        boardBefore: state.board,
+        boardAfter: newBoard,
+      },
+    ],
   };
 
   return checkGameOver(newState);
+};
+
+export const playPass = (state: GameState, player: Player): GameState => {
+  const newState: GameState = {
+    ...state,
+    currentPlayer: getOpponent(player),
+    fullMoveHistory: [
+      ...state.fullMoveHistory,
+      {
+        type: 'pass',
+        player,
+        boardBefore: state.board,
+        boardAfter: state.board,
+      },
+    ],
+  };
+
+  return newState;
 };
