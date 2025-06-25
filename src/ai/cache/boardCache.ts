@@ -26,9 +26,9 @@ export class BoardCache {
   /**
    * キャッシュから評価値を取得
    */
-  get(board: Board, depth: number, originalPlayer: Player, maximizingPlayer: boolean): CacheEntry | null {
+  get(board: Board, depth: number, player: Player, isMaximizing: boolean): CacheEntry | null {
     const boardHash = computeBoardHash(board);
-    const key = `${boardHash}_${originalPlayer}_${maximizingPlayer}_${depth}`;
+    const key = `${boardHash}_${player}_${depth}`;
     const entry = this.cache.get(key);
 
     if (entry) {
@@ -48,9 +48,9 @@ export class BoardCache {
   /**
    * キャッシュに評価値を保存
    */
-  set(board: Board, evaluation: number, bestMove: Position | null, depth: number, originalPlayer: Player, maximizingPlayer: boolean): void {
+  set(board: Board, evaluation: number, bestMove: Position | null, depth: number, player: Player, isMaximizing: boolean): void {
     const boardHash = computeBoardHash(board);
-    const key = `${boardHash}_${originalPlayer}_${maximizingPlayer}_${depth}`;
+    const key = `${boardHash}_${player}_${depth}`;
     
     // キャッシュサイズ制限に達した場合、最も古いエントリを削除
     if (this.cache.size >= this.maxSize) {

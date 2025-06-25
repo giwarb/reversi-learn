@@ -42,9 +42,7 @@ export const analyzeBadMove = (
       getOpponent(player),
       aiDepth - 1,
       -1000000,
-      1000000,
-      false,
-      player
+      1000000
     );
     moveScores.push({
       position: { row: move.row, col: move.col },
@@ -53,8 +51,12 @@ export const analyzeBadMove = (
     });
   }
 
-  // スコアで降順ソート
-  moveScores.sort((a, b) => b.score - a.score);
+  // スコアでソート（黒は昇順、白は降順）
+  if (player === 'black') {
+    moveScores.sort((a, b) => a.score - b.score); // 黒は小さい値が良い
+  } else {
+    moveScores.sort((a, b) => b.score - a.score); // 白は大きい値が良い
+  }
 
   // 最善手を見つける
   const bestMove = moveScores[0];

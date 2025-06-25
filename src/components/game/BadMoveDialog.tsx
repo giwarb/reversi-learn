@@ -61,14 +61,14 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
     // 現在の手番を判定（プレイヤーが打った後なので相手の手番）
     const currentPlayer = playerColor === 'black' ? 'white' : 'black';
     // minimaxで評価値を計算
-    return minimax(boardB, currentPlayer, 4, -1000000, 1000000, currentPlayer === 'black', currentPlayer);
+    return minimax(boardB, currentPlayer, 4, -1000000, 1000000);
   }, [boardB, playerColor]);
   
   const evalD = useMemo(() => {
     // 現在の手番を判定（プレイヤーが打った後なので相手の手番）
     const currentPlayer = playerColor === 'black' ? 'white' : 'black';
     // minimaxで評価値を計算
-    return minimax(boardD, currentPlayer, 4, -1000000, 1000000, currentPlayer === 'black', currentPlayer);
+    return minimax(boardD, currentPlayer, 4, -1000000, 1000000);
   }, [boardD, playerColor]);
   
   // 各盤面の詳細分析

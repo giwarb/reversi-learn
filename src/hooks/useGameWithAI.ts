@@ -75,9 +75,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
           gameState.currentPlayer,
           4,
           -1000000,
-          1000000,
-          gameState.currentPlayer === 'black',
-          gameState.currentPlayer
+          1000000
         );
         setBeforeMoveBlackScore(beforeEvaluation);
         setBeforeMoveWhiteScore(beforeEvaluation);
@@ -276,9 +274,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
         gameState.currentPlayer,
         4,
         -1000000,
-        1000000,
-        gameState.currentPlayer === 'black',
-        gameState.currentPlayer
+        1000000
       );
       
       setDeepBlackScore(evaluation);

@@ -13,12 +13,10 @@ export const minimax = (
   player: Player,
   depth: number,
   alpha: number,
-  beta: number,
-  maximizingPlayer: boolean,
-  originalPlayer: Player
+  beta: number
 ): number => {
   // キャッシュをチェック
-  const cached = globalBoardCache.get(board, depth, originalPlayer, maximizingPlayer);
+  const cached = globalBoardCache.get(board, depth, player, player === 'white');
   if (cached !== null) {
     return cached.evaluation;
   }
@@ -26,7 +24,7 @@ export const minimax = (
   // 深さ0または終了状態なら評価値を返す
   if (depth === 0) {
     const evaluation = evaluateBoard(board);
-    globalBoardCache.set(board, evaluation, null, 0, originalPlayer, maximizingPlayer);
+    globalBoardCache.set(board, evaluation, null, 0, player, player === 'white');
     return evaluation;
   }
 
@@ -59,10 +57,12 @@ export const minimax = (
     }
 
     // パスの場合
-    return minimax(board, opponent, depth, alpha, beta, !maximizingPlayer, originalPlayer);
+    return minimax(board, opponent, depth, alpha, beta);
   }
 
-  if (maximizingPlayer) {
+  // 黒は最小化、白は最大化
+  if (player === 'white') {
+    // 白：最大化
     let maxEval = MIN_SCORE;
     let bestMove = null;
 
@@ -73,9 +73,7 @@ export const minimax = (
         getOpponent(player),
         depth - 1,
         alpha,
-        beta,
-        false,
-        originalPlayer
+        beta
       );
 
       if (evaluation > maxEval) {
@@ -90,9 +88,10 @@ export const minimax = (
     }
 
     // 結果をキャッシュに保存
-    globalBoardCache.set(board, maxEval, bestMove, depth, originalPlayer, maximizingPlayer);
+    globalBoardCache.set(board, maxEval, bestMove, depth, player, true);
     return maxEval;
   } else {
+    // 黒：最小化
     let minEval = MAX_SCORE;
     let bestMove = null;
 
@@ -103,9 +102,7 @@ export const minimax = (
         getOpponent(player),
         depth - 1,
         alpha,
-        beta,
-        true,
-        originalPlayer
+        beta
       );
 
       if (evaluation < minEval) {
@@ -120,7 +117,7 @@ export const minimax = (
     }
 
     // 結果をキャッシュに保存
-    globalBoardCache.set(board, minEval, bestMove, depth, originalPlayer, maximizingPlayer);
+    globalBoardCache.set(board, minEval, bestMove, depth, player, false);
     return minEval;
   }
 };
@@ -175,9 +172,7 @@ export const findBestMoveIterativeDeepening = (
         getOpponent(player),
         currentDepth - 1,
         alpha,
-        beta,
-        player === 'black',
-        player
+        beta
       );
 
       if (player === 'black' && score < bestScore) {
@@ -302,9 +297,7 @@ export const findBestMove = (
       getOpponent(player),
       maxDepth - 1,
       MIN_SCORE,
-      MAX_SCORE,
-      player === 'black',
-      player
+      MAX_SCORE
     );
 
     if (player === 'black' && score < bestScore) {
