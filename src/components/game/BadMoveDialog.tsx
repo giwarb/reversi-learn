@@ -5,6 +5,7 @@ import type { Board, Player, Position } from '../../game/types';
 import { getNormalizedScores } from '../../utils/evaluationNormalizer';
 import { evaluateBoard } from '../../ai/evaluation';
 import { findBestMove } from '../../ai/minimax';
+import { explainBoardEvaluation, getBriefExplanation } from '../../ai/boardEvaluationExplainer';
 import './BadMoveDialog.css';
 
 interface BadMoveDialogProps {
@@ -32,7 +33,6 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
   onClose,
   onUndo,
 }) => {
-  const opponent: Player = playerColor === 'black' ? 'white' : 'black';
   // 盤面A: 初期盤面（プレイヤーが打つ前）
   const boardA = initialBoard;
   
@@ -42,20 +42,6 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
     if (!validMove) return boardA;
     return makeMove(boardA, validMove, playerColor);
   }, [boardA, playerMove, playerColor]);
-  
-  // 相手の最善応手p2（Bに対して）
-  const opponentResponseP2 = useMemo(() => {
-    const bestMove = findBestMove(boardB, opponent, aiDepth);
-    return bestMove?.position || null;
-  }, [boardB, opponent, aiDepth]);
-  
-  // 盤面C: B + 相手の最善応手p2
-  const boardC = useMemo(() => {
-    if (!opponentResponseP2) return boardB;
-    const validMove = getValidMove(boardB, opponentResponseP2, opponent);
-    if (!validMove) return boardB;
-    return makeMove(boardB, validMove, opponent);
-  }, [boardB, opponentResponseP2, opponent]);
 
   // AIの推奨手p3（Aに対して）
   const aiRecommendationP3 = useMemo(() => {
@@ -70,27 +56,14 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
     if (!validMove) return boardA;
     return makeMove(boardA, validMove, playerColor);
   }, [boardA, aiRecommendationP3, playerColor]);
-  
-  // 相手の最善応手p4（Dに対して）
-  const opponentResponseP4 = useMemo(() => {
-    const bestMove = findBestMove(boardD, opponent, aiDepth);
-    return bestMove?.position || null;
-  }, [boardD, opponent, aiDepth]);
-  
-  // 盤面E: D + 相手の最善応手p4
-  const boardE = useMemo(() => {
-    if (!opponentResponseP4) return boardD;
-    const validMove = getValidMove(boardD, opponentResponseP4, opponent);
-    if (!validMove) return boardD;
-    return makeMove(boardD, validMove, opponent);
-  }, [boardD, opponentResponseP4, opponent]);
 
   // 各盤面の評価値を計算
-  const evalA = useMemo(() => evaluateBoard(boardA, playerColor), [boardA, playerColor]);
   const evalB = useMemo(() => evaluateBoard(boardB, playerColor), [boardB, playerColor]);
-  const evalC = useMemo(() => evaluateBoard(boardC, playerColor), [boardC, playerColor]);
   const evalD = useMemo(() => evaluateBoard(boardD, playerColor), [boardD, playerColor]);
-  const evalE = useMemo(() => evaluateBoard(boardE, playerColor), [boardE, playerColor]);
+  
+  // 各盤面の詳細分析
+  const playerMoveExplanation = useMemo(() => explainBoardEvaluation(boardB, playerColor), [boardB, playerColor]);
+  const aiMoveExplanation = useMemo(() => explainBoardEvaluation(boardD, playerColor), [boardD, playerColor]);
 
 
   useEffect(() => {
@@ -117,11 +90,8 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
   };
 
   const getTitle = () => {
-    if (analysis.explanation.includes('最善手を選びました')) {
-      return '素晴らしい！';
-    }
-    if (analysis.isBadMove) {
-      return '悪手です';
+    if (analysis.rank && analysis.totalMoves) {
+      return `手の分析：${analysis.totalMoves}手中${analysis.rank}位`;
     }
     return '手の分析';
   };
@@ -166,27 +136,20 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
         </div>
         <div className="dialog-content">
           <div className="dialog-content-scroll">
-            {analysis.detailedAnalysis && (
+            {analysis && (
               <div className="move-comparison">
-              {/* 初期評価値表示 */}
-              <div className="initial-evaluation">
-                <h3>手を打つ前の評価値</h3>
-                <div className="evaluation-display">
-                  {(() => {
-                    const { blackScore, whiteScore } = getNormalizedScores(
-                      playerColor === 'black' ? evalA : -evalA,
-                      playerColor === 'white' ? evalA : -evalA
-                    );
-                    const playerScore = playerColor === 'black' ? blackScore : whiteScore;
-                    const aiScore = playerColor === 'black' ? whiteScore : blackScore;
-                    return (
-                      <span className="eval-score">
-                        あなた: {playerScore.toFixed(1)} vs AI: {aiScore.toFixed(1)}
-                      </span>
-                    );
-                  })()}
+              {/* 順位表示 */}
+              {analysis.rank && analysis.totalMoves && (
+                <div className="move-ranking">
+                  <h3>手の評価</h3>
+                  <div className="ranking-display">
+                    <span className={`ranking-text ${analysis.rank === 1 ? 'best-move' : analysis.percentile && analysis.percentile < 20 ? 'bad-move' : ''}`}>
+                      {analysis.rank === 1 ? '最善手です！' : `${analysis.totalMoves}手中${analysis.rank}位`}
+                      {analysis.percentile && analysis.rank !== 1 && ` (上位${analysis.percentile.toFixed(0)}%)`}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* 手を打つ前の盤面（上ペイン） */}
               <div className="board-section">
@@ -223,15 +186,12 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                 </div>
               </div>
 
-              {/* 左下・右下ペイン */}
+              {/* 左右ペイン：プレイヤーの手とAI推奨手の比較 */}
               <div className="boards-comparison">
-                {/* 左下ペイン：プレイヤーの手の流れ */}
+                {/* 左ペイン：プレイヤーの手 */}
                 <div className="board-section">
-                  <h3>あなたの手の結果</h3>
-                  
-                  {/* プレイヤーが打った直後 */}
+                  <h3>あなたの手</h3>
                   <div className="board-subsection">
-                    <h4>手を打った直後</h4>
                     <div className="mini-board">
                       <div className="mini-board-with-labels">
                         <div className="mini-corner-space" />
@@ -283,82 +243,23 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                           return `あなた: ${playerScore.toFixed(1)} vs AI: ${aiScore.toFixed(1)}`;
                         })()}
                       </div>
+                      <div className="board-analysis">
+                        <h4>盤面分析</h4>
+                        <div className="analysis-content">
+                          <div className="overall-assessment">{playerMoveExplanation.overallAssessment}</div>
+                          <pre className="explanation-details">{getBriefExplanation(playerMoveExplanation)}</pre>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* 相手が応手した後 */}
-                  {opponentResponseP2 && (
-                    <div className="board-subsection">
-                      <h4>相手の応手後</h4>
-                      <div className="mini-board">
-                        <div className="mini-board-with-labels">
-                          <div className="mini-corner-space" />
-                          <div className="mini-column-labels">
-                            {columnLabels.map((label) => (
-                              <div key={label} className="mini-label">
-                                {label}
-                              </div>
-                            ))}
-                          </div>
-                          <div className="mini-row-labels">
-                            {rowLabels.map((label) => (
-                              <div key={label} className="mini-label">
-                                {label}
-                              </div>
-                            ))}
-                          </div>
-                          <div className="board-grid">
-                            {boardC.map((row, rowIndex) => (
-                              <div key={rowIndex} className="board-row">
-                                {row.map((cell, colIndex) => (
-                                  <div
-                                    key={`${rowIndex}-${colIndex}`}
-                                    className={`board-cell ${getCellClass(rowIndex, colIndex, [
-                                      {
-                                        row: playerMove.row,
-                                        col: playerMove.col,
-                                        type: 'player-move',
-                                      },
-                                      {
-                                        row: opponentResponseP2.row,
-                                        col: opponentResponseP2.col,
-                                        type: 'opponent-response',
-                                      },
-                                    ])}`}
-                                  >
-                                    {cell && <div className={`stone ${cell}`} />}
-                                  </div>
-                                ))}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="board-evaluation">
-                        <div className="eval-score">
-                          {(() => {
-                            const { blackScore, whiteScore } = getNormalizedScores(
-                              playerColor === 'black' ? evalC : -evalC,
-                              playerColor === 'white' ? evalC : -evalC
-                            );
-                            const playerScore = playerColor === 'black' ? blackScore : whiteScore;
-                            const aiScore = playerColor === 'black' ? whiteScore : blackScore;
-                            return `あなた: ${playerScore.toFixed(1)} vs AI: ${aiScore.toFixed(1)}`;
-                          })()}
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                {/* 右下ペイン：推奨手の流れ */}
+                {/* 右ペイン：AIの推奨手 */}
                 {aiRecommendationP3 && (
                   <div className="board-section">
-                    <h3>推奨手の結果</h3>
-                    
-                    {/* 推奨手を打った直後 */}
+                    <h3>AIの推奨手</h3>
                     <div className="board-subsection">
-                      <h4>推奨手を打った直後</h4>
                       <div className="mini-board">
                         <div className="mini-board-with-labels">
                           <div className="mini-corner-space" />
@@ -410,72 +311,15 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                             return `あなた: ${playerScore.toFixed(1)} vs AI: ${aiScore.toFixed(1)}`;
                           })()}
                         </div>
+                        <div className="board-analysis">
+                          <h4>盤面分析</h4>
+                          <div className="analysis-content">
+                            <div className="overall-assessment">{aiMoveExplanation.overallAssessment}</div>
+                            <pre className="explanation-details">{getBriefExplanation(aiMoveExplanation)}</pre>
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    {/* 相手が応手した後 */}
-                    {opponentResponseP4 && (
-                      <div className="board-subsection">
-                        <h4>相手の応手後</h4>
-                        <div className="mini-board">
-                          <div className="mini-board-with-labels">
-                            <div className="mini-corner-space" />
-                            <div className="mini-column-labels">
-                              {columnLabels.map((label) => (
-                                <div key={label} className="mini-label">
-                                  {label}
-                                </div>
-                              ))}
-                            </div>
-                            <div className="mini-row-labels">
-                              {rowLabels.map((label) => (
-                                <div key={label} className="mini-label">
-                                  {label}
-                                </div>
-                              ))}
-                            </div>
-                            <div className="board-grid">
-                              {boardE.map((row, rowIndex) => (
-                                <div key={rowIndex} className="board-row">
-                                  {row.map((cell, colIndex) => (
-                                    <div
-                                      key={`${rowIndex}-${colIndex}`}
-                                      className={`board-cell ${getCellClass(rowIndex, colIndex, [
-                                        {
-                                          row: aiRecommendationP3.row,
-                                          col: aiRecommendationP3.col,
-                                          type: 'ai-recommendation',
-                                        },
-                                        {
-                                          row: opponentResponseP4.row,
-                                          col: opponentResponseP4.col,
-                                          type: 'opponent-response',
-                                        },
-                                      ])}`}
-                                    >
-                                      {cell && <div className={`stone ${cell}`} />}
-                                    </div>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="board-evaluation">
-                          <div className="eval-score">
-                            {(() => {
-                              const { blackScore, whiteScore } = getNormalizedScores(
-                                playerColor === 'black' ? evalE : -evalE,
-                                playerColor === 'white' ? evalE : -evalE
-                              );
-                              const playerScore = playerColor === 'black' ? blackScore : whiteScore;
-                              const aiScore = playerColor === 'black' ? whiteScore : blackScore;
-                              return `あなた: ${playerScore.toFixed(1)} vs AI: ${aiScore.toFixed(1)}`;
-                            })()}
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>

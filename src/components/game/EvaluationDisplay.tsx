@@ -1,6 +1,7 @@
-import type { FC } from 'react';
+import { type FC, useState } from 'react';
 import type { Board, Player } from '../../game/types';
 import { getAdvantageText, getNormalizedScores } from '../../utils/evaluationNormalizer';
+import { explainBoardEvaluation, getBriefExplanation } from '../../ai/boardEvaluationExplainer';
 import './EvaluationDisplay.css';
 
 interface EvaluationDisplayProps {
@@ -12,11 +13,13 @@ interface EvaluationDisplayProps {
 }
 
 export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
+  board,
   blackScore: blackRawScore,
   whiteScore: whiteRawScore,
   currentPlayer,
   playerColor,
 }) => {
+  const [showExplanation, setShowExplanation] = useState(false);
   // 正規化されたスコアを取得（0-100範囲、50が均衡）
   const { blackScore, whiteScore } = getNormalizedScores(blackRawScore, whiteRawScore);
   const playerScore = playerColor === 'black' ? blackScore : whiteScore;
@@ -67,6 +70,34 @@ export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
           </span>
           <span>AI</span>
         </div>
+      </div>
+      
+      <div className="evaluation-explanation-section">
+        <button
+          type="button"
+          className="toggle-explanation-button"
+          onClick={() => setShowExplanation(!showExplanation)}
+        >
+          {showExplanation ? '▼' : '▶'} 盤面の詳細分析
+        </button>
+        
+        {showExplanation && (
+          <div className="evaluation-explanation">
+            <h4>【盤面の分析】</h4>
+            <div className="explanation-content">
+              {(() => {
+                const explanation = explainBoardEvaluation(board, playerColor);
+                const brief = getBriefExplanation(explanation);
+                return (
+                  <>
+                    <div className="overall-assessment">{explanation.overallAssessment}</div>
+                    <pre className="explanation-details">{brief}</pre>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

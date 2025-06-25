@@ -195,12 +195,9 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
       setAILevel(level);
       ai.setDepth(level);
       badMoveDetector.setAIDepth(level);
-      // ゲーム中にレベルを変更した場合は新しいゲームを開始
-      if (!gameState.gameOver) {
-        resetGame();
-      }
+      // ゲーム中でもレベル変更を即座に反映（リセットしない）
     },
-    [ai, badMoveDetector, gameState.gameOver, resetGame]
+    [ai, badMoveDetector]
   );
 
   useEffect(() => {

@@ -1,0 +1,68 @@
+.move-ranking-display {
+  margin: 10px 0;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ranking-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.ranking-label {
+  color: #6c757d;
+  font-weight: normal;
+}
+
+.ranking-value {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.ranking-percentile {
+  color: #6c757d;
+  font-size: 14px;
+}
+
+/* 評価に応じた色分け */
+.ranking-info.best-move .ranking-value {
+  color: #28a745;
+}
+
+.ranking-info.good-move .ranking-value {
+  color: #17a2b8;
+}
+
+.ranking-info.mediocre-move .ranking-value {
+  color: #ffc107;
+}
+
+.ranking-info.bad-move .ranking-value {
+  color: #dc3545;
+}
+
+.analyze-button {
+  padding: 6px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.analyze-button:hover {
+  background-color: #0056b3;
+}
+
+.analyze-button:active {
+  transform: translateY(1px);
+}
