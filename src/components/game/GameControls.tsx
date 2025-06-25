@@ -8,6 +8,10 @@ interface GameControlsProps {
   aiLevel: number;
   onAILevelChange: (level: number) => void;
   isGameOver: boolean;
+  useIterativeDeepening?: boolean;
+  onIterativeDeepeningChange?: (enabled: boolean) => void;
+  aiTimeLimit?: number;
+  onAITimeLimitChange?: (ms: number) => void;
 }
 
 export const GameControls: FC<GameControlsProps> = ({
@@ -15,8 +19,14 @@ export const GameControls: FC<GameControlsProps> = ({
   aiLevel,
   onAILevelChange,
   isGameOver: _isGameOver,
+  useIterativeDeepening = false,
+  onIterativeDeepeningChange,
+  aiTimeLimit = 5000,
+  onAITimeLimitChange,
 }) => {
   const aiLevelId = useId();
+  const iterativeDeepeningId = useId();
+  const timeLimitId = useId();
 
   return (
     <div className="controls">
@@ -38,6 +48,35 @@ export const GameControls: FC<GameControlsProps> = ({
           <option value={6}>6 (強い)</option>
         </select>
       </div>
+      {onIterativeDeepeningChange && (
+        <div className="iterative-deepening-control">
+          <label htmlFor={iterativeDeepeningId}>
+            <input
+              id={iterativeDeepeningId}
+              type="checkbox"
+              checked={useIterativeDeepening}
+              onChange={(e) => onIterativeDeepeningChange(e.target.checked)}
+            />
+            Iterative Deepening
+          </label>
+        </div>
+      )}
+      {useIterativeDeepening && onAITimeLimitChange && (
+        <div className="time-limit-control">
+          <label htmlFor={timeLimitId}>制限時間: </label>
+          <select
+            id={timeLimitId}
+            value={aiTimeLimit}
+            onChange={(e) => onAITimeLimitChange(Number(e.target.value))}
+          >
+            <option value={1000}>1秒</option>
+            <option value={2000}>2秒</option>
+            <option value={3000}>3秒</option>
+            <option value={5000}>5秒</option>
+            <option value={10000}>10秒</option>
+          </select>
+        </div>
+      )}
     </div>
   );
 };

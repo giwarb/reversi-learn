@@ -1,6 +1,6 @@
 import { checkGameOver } from '../game/gameState';
-import { getAllValidMoves, getOpponent, makeMove } from '../game/rules';
-import type { Board, GameState, Player } from '../game/types';
+import { getAllValidMoves, getOpponent, makeMove, getValidMove } from '../game/rules';
+import type { Board, GameState, Player, Position } from '../game/types';
 import { globalBoardCache } from './cache/boardCache';
 import { evaluateBoard } from './evaluation';
 import type { MoveEvaluation } from './types';
@@ -18,7 +18,7 @@ export const minimax = (
   originalPlayer: Player
 ): number => {
   // キャッシュをチェック
-  const cached = globalBoardCache.get(board, depth);
+  const cached = globalBoardCache.get(board, depth, originalPlayer, maximizingPlayer);
   if (cached !== null) {
     return cached.evaluation;
   }
@@ -26,7 +26,7 @@ export const minimax = (
   // 深さ0または終了状態なら評価値を返す
   if (depth === 0) {
     const evaluation = evaluateBoard(board, originalPlayer);
-    globalBoardCache.set(board, evaluation, null, 0);
+    globalBoardCache.set(board, evaluation, null, 0, originalPlayer, maximizingPlayer);
     return evaluation;
   }
 
@@ -90,7 +90,7 @@ export const minimax = (
     }
 
     // 結果をキャッシュに保存
-    globalBoardCache.set(board, maxEval, bestMove, depth);
+    globalBoardCache.set(board, maxEval, bestMove, depth, originalPlayer, maximizingPlayer);
     return maxEval;
   } else {
     let minEval = MAX_SCORE;
@@ -120,9 +120,131 @@ export const minimax = (
     }
 
     // 結果をキャッシュに保存
-    globalBoardCache.set(board, minEval, bestMove, depth);
+    globalBoardCache.set(board, minEval, bestMove, depth, originalPlayer, maximizingPlayer);
     return minEval;
   }
+};
+
+export const findBestMoveIterativeDeepening = (
+  board: Board,
+  player: Player,
+  maxDepth: number,
+  timeLimitMs: number = 5000
+): MoveEvaluation | null => {
+  const startTime = Date.now();
+  let bestMoveAtDepth: MoveEvaluation | null = null;
+  let previousBestMove: Position | null = null;
+  const pv: Position[] = [];
+
+  // 深さ1から最大深さまで段階的に探索
+  for (let currentDepth = 1; currentDepth <= maxDepth; currentDepth++) {
+    const depthStartTime = Date.now();
+    
+    // 時間チェック - 残り時間が前回の探索時間の2倍未満なら打ち切り
+    const elapsedTime = depthStartTime - startTime;
+    const remainingTime = timeLimitMs - elapsedTime;
+    
+    if (currentDepth > 1 && remainingTime < (depthStartTime - startTime) * 2) {
+      break;
+    }
+
+    const validMoves = getAllValidMoves(board, player);
+    if (validMoves.length === 0) {
+      return null;
+    }
+
+    // ムーブオーダリング：前の深さの最善手を最初に探索
+    const orderedMoves = orderMoves(validMoves, previousBestMove);
+    
+    let bestMove: MoveEvaluation | null = null;
+    let bestScore = MIN_SCORE;
+    let alpha = MIN_SCORE;
+    let beta = MAX_SCORE;
+
+    for (const move of orderedMoves) {
+      // 時間制限チェック
+      if (Date.now() - startTime > timeLimitMs) {
+        return bestMoveAtDepth; // 前の深さの結果を返す
+      }
+
+      const validMove = getValidMove(board, move, player);
+      if (!validMove) continue;
+      const newBoard = makeMove(board, validMove, player);
+      const score = minimax(
+        newBoard,
+        getOpponent(player),
+        currentDepth - 1,
+        alpha,
+        beta,
+        false,
+        player
+      );
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = {
+          position: { row: move.row, col: move.col },
+          score,
+          depth: currentDepth,
+          timeSpent: Date.now() - startTime,
+        };
+        alpha = Math.max(alpha, score);
+      }
+    }
+
+    if (bestMove) {
+      bestMoveAtDepth = bestMove;
+      previousBestMove = bestMove.position;
+      pv[0] = bestMove.position;
+      bestMoveAtDepth.pv = [...pv];
+    }
+
+    // キャッシュに保存
+    if (bestMoveAtDepth) {
+      globalBoardCache.set(board, bestScore, bestMoveAtDepth.position, currentDepth, player, true);
+    }
+  }
+
+  return bestMoveAtDepth;
+};
+
+// ムーブオーダリング関数
+const orderMoves = (moves: Position[], previousBest: Position | null): Position[] => {
+  if (!previousBest) {
+    // 前回の最善手がない場合は、角と辺を優先
+    return [...moves].sort((a, b) => {
+      const isCornerA = (a.row === 0 || a.row === 7) && (a.col === 0 || a.col === 7);
+      const isCornerB = (b.row === 0 || b.row === 7) && (b.col === 0 || b.col === 7);
+      if (isCornerA && !isCornerB) return -1;
+      if (!isCornerA && isCornerB) return 1;
+      
+      const isEdgeA = a.row === 0 || a.row === 7 || a.col === 0 || a.col === 7;
+      const isEdgeB = b.row === 0 || b.row === 7 || b.col === 0 || b.col === 7;
+      if (isEdgeA && !isEdgeB) return -1;
+      if (!isEdgeA && isEdgeB) return 1;
+      
+      return 0;
+    });
+  }
+
+  // 前回の最善手を最初に、その後は角と辺を優先
+  return [...moves].sort((a, b) => {
+    // 前回の最善手を最優先
+    if (a.row === previousBest.row && a.col === previousBest.col) return -1;
+    if (b.row === previousBest.row && b.col === previousBest.col) return 1;
+    
+    const isCornerA = (a.row === 0 || a.row === 7) && (a.col === 0 || a.col === 7);
+    const isCornerB = (b.row === 0 || b.row === 7) && (b.col === 0 || b.col === 7);
+    if (isCornerA && !isCornerB) return -1;
+    if (!isCornerA && isCornerB) return 1;
+    
+    const isEdgeA = a.row === 0 || a.row === 7 || a.col === 0 || a.col === 7;
+    const isEdgeB = b.row === 0 || b.row === 7 || b.col === 0 || b.col === 7;
+    if (isEdgeA && !isEdgeB) return -1;
+    if (!isEdgeA && isEdgeB) return 1;
+    
+    return 0;
+  });
 };
 
 export const findBestMove = (
@@ -131,7 +253,7 @@ export const findBestMove = (
   maxDepth: number
 ): MoveEvaluation | null => {
   // まずキャッシュをチェック
-  const cached = globalBoardCache.get(board, maxDepth);
+  const cached = globalBoardCache.get(board, maxDepth, player, true);
   if (cached !== null && cached.bestMove) {
     return {
       position: cached.bestMove,
@@ -188,7 +310,7 @@ export const findBestMove = (
 
   // 最善手をキャッシュに保存
   if (bestMove) {
-    globalBoardCache.set(board, bestScore, bestMove.position, maxDepth);
+    globalBoardCache.set(board, bestScore, bestMove.position, maxDepth, player, true);
   }
 
   return bestMove;

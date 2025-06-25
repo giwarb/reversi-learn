@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ReversiAI } from '../ai/ai';
 import { globalBoardCache } from '../ai/cache/boardCache';
 import { globalValidMovesCache } from '../ai/cache/validMovesCache';
-import { evaluateBoard } from '../ai/evaluation';
+import { minimax } from '../ai/minimax';
 import type { BadMoveResult } from '../game/badMoveDetector';
 import { BadMoveDetector } from '../game/badMoveDetector';
 import { countPieces } from '../game/board';
@@ -28,6 +28,11 @@ export interface GameWithAIState {
   isPassTurn: boolean;
   beforeMoveBlackScore: number;
   beforeMoveWhiteScore: number;
+  useIterativeDeepening: boolean;
+  setUseIterativeDeepening: (enabled: boolean) => void;
+  aiThinkingDepth: number;
+  aiTimeLimit: number;
+  setAITimeLimit: (ms: number) => void;
 }
 
 export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState => {
@@ -35,18 +40,23 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [lastMoveAnalysis, setLastMoveAnalysis] = useState<BadMoveResult | null>(null);
   const [aiLevel, setAILevel] = useState(4);
-  const [ai] = useState(() => new ReversiAI({ maxDepth: aiLevel }));
+  const [ai] = useState(() => new ReversiAI({ maxDepth: aiLevel, useIterativeDeepening: false }));
   const [badMoveDetector] = useState(() => new BadMoveDetector(aiLevel));
   const [playerColor, setPlayerColor] = useState<Player>('black');
   const [isPassTurn, setIsPassTurn] = useState(false);
   const [beforeMoveBlackScore, setBeforeMoveBlackScore] = useState(0);
   const [beforeMoveWhiteScore, setBeforeMoveWhiteScore] = useState(0);
+  const [useIterativeDeepening, setUseIterativeDeepening] = useState(false);
+  const [aiThinkingDepth, setAIThinkingDepth] = useState(0);
+  const [aiTimeLimit, setAITimeLimit] = useState(5000);
+  const [deepBlackScore, setDeepBlackScore] = useState(0);
+  const [deepWhiteScore, setDeepWhiteScore] = useState(0);
 
   const validMoves = getAllValidMoves(gameState.board, gameState.currentPlayer);
 
-  // 現在の盤面の評価値を計算
-  const blackScore = evaluateBoard(gameState.board, 'black');
-  const whiteScore = evaluateBoard(gameState.board, 'white');
+  // 現在の盤面の評価値を計算（表示用には深さ4の評価値を使用）
+  const blackScore = deepBlackScore;
+  const whiteScore = deepWhiteScore;
 
   const makeMove = useCallback(
     async (position: Position) => {
@@ -59,9 +69,25 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
 
       // 悪手検出（人間のプレイヤーの手のみ）
       if (gameState.currentPlayer === playerColor) {
-        // 手を打つ前の評価値を保存
-        const beforeBlackScore = evaluateBoard(boardBeforeMove, 'black');
-        const beforeWhiteScore = evaluateBoard(boardBeforeMove, 'white');
+        // 手を打つ前の深さ4の評価値を保存
+        const beforeBlackScore = minimax(
+          boardBeforeMove,
+          'black',
+          4,
+          -1000000,
+          1000000,
+          true,
+          'black'
+        );
+        const beforeWhiteScore = minimax(
+          boardBeforeMove,
+          'white',
+          4,
+          -1000000,
+          1000000,
+          true,
+          'white'
+        );
         setBeforeMoveBlackScore(beforeBlackScore);
         setBeforeMoveWhiteScore(beforeWhiteScore);
 
@@ -83,19 +109,44 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
         setIsAIThinking(true);
 
         // AIの思考を非同期で実行
-        setTimeout(() => {
-          const aiMove = ai.getMove(newState.board, aiColor);
-          if (aiMove) {
-            const aiNewState = playMove(newState, aiMove);
-            if (aiNewState) {
-              setGameState(aiNewState);
+        setTimeout(async () => {
+          setAIThinkingDepth(0);
+          const startThinking = Date.now();
+          
+          // Iterative Deepeningモードの場合、進捗を表示
+          if (useIterativeDeepening) {
+            // 非同期でAIの思考を実行し、進捗を更新
+            const checkProgress = setInterval(() => {
+              // 本来はAIから進捗を取得すべきだが、簡易的に時間ベースで更新
+              const elapsed = Date.now() - startThinking;
+              const estimatedDepth = Math.min(Math.floor(elapsed / 1000) + 1, aiLevel);
+              setAIThinkingDepth(estimatedDepth);
+            }, 100);
+            
+            const aiMove = ai.getMove(newState.board, aiColor);
+            clearInterval(checkProgress);
+            
+            if (aiMove) {
+              const aiNewState = playMove(newState, aiMove);
+              if (aiNewState) {
+                setGameState(aiNewState);
+              }
+            }
+          } else {
+            const aiMove = ai.getMove(newState.board, aiColor);
+            if (aiMove) {
+              const aiNewState = playMove(newState, aiMove);
+              if (aiNewState) {
+                setGameState(aiNewState);
+              }
             }
           }
           setIsAIThinking(false);
+          setAIThinkingDepth(0);
         }, 500);
       }
     },
-    [gameState, isAIThinking, playAgainstAI, ai, badMoveDetector, playerColor]
+    [gameState, isAIThinking, playAgainstAI, ai, badMoveDetector, playerColor, useIterativeDeepening, aiLevel]
   );
 
   const resetGame = useCallback(() => {
@@ -208,6 +259,50 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     [ai, badMoveDetector]
   );
 
+  const handleSetUseIterativeDeepening = useCallback(
+    (enabled: boolean) => {
+      setUseIterativeDeepening(enabled);
+      ai.setIterativeDeepening(enabled);
+    },
+    [ai]
+  );
+
+  const handleSetAITimeLimit = useCallback(
+    (ms: number) => {
+      setAITimeLimit(ms);
+      ai.setTimeLimit(ms);
+    },
+    [ai]
+  );
+
+  // 深さ4の評価値を計算
+  useEffect(() => {
+    // 非同期で深さ4の評価値を計算
+    const calculateDeepScores = async () => {
+      // 現在の手番のプレイヤーの視点から見た評価値を計算
+      const currentPlayerScore = minimax(
+        gameState.board,
+        gameState.currentPlayer,
+        4,
+        -1000000,
+        1000000,
+        true,
+        gameState.currentPlayer
+      );
+      
+      // 黒と白それぞれの評価値に変換
+      if (gameState.currentPlayer === 'black') {
+        setDeepBlackScore(currentPlayerScore);
+        setDeepWhiteScore(-currentPlayerScore);
+      } else {
+        setDeepWhiteScore(currentPlayerScore);
+        setDeepBlackScore(-currentPlayerScore);
+      }
+    };
+    
+    calculateDeepScores();
+  }, [gameState.board, gameState.currentPlayer]);
+
   useEffect(() => {
     // パスの処理
     if (validMoves.length === 0 && !gameState.gameOver && !isAIThinking) {
@@ -282,5 +377,10 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     isPassTurn,
     beforeMoveBlackScore,
     beforeMoveWhiteScore,
+    useIterativeDeepening,
+    setUseIterativeDeepening: handleSetUseIterativeDeepening,
+    aiThinkingDepth,
+    aiTimeLimit,
+    setAITimeLimit: handleSetAITimeLimit,
   };
 };

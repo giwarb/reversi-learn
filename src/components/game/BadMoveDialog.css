@@ -507,3 +507,69 @@
   background-color: #f8d7da;
   border: 1px solid #f5c6cb;
 }
+
+/* 合法手一覧のスタイル */
+.all-moves-section {
+  margin-top: 24px;
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.all-moves-section h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.moves-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.move-item {
+  display: grid;
+  grid-template-columns: 40px 80px 1fr 200px;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: white;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.move-item.best-move {
+  background-color: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.move-item.player-move {
+  background-color: #fff3e0;
+  border-color: #ff9800;
+}
+
+.move-item.bad-move {
+  background-color: #ffebee;
+  border-color: #f44336;
+}
+
+.move-rank {
+  font-weight: bold;
+  color: #666;
+}
+
+.move-position {
+  font-family: monospace;
+  font-size: 1.1em;
+}
+
+.move-evaluation {
+  text-align: right;
+  color: #666;
+}
+
+.move-score {
+  text-align: right;
+  font-weight: 500;
+}

@@ -1,4 +1,4 @@
-import type { Board, Position } from '../../game/types';
+import type { Board, Position, Player } from '../../game/types';
 import { computeBoardHash } from './zobristHash';
 
 interface CacheEntry {
@@ -26,11 +26,12 @@ export class BoardCache {
   /**
    * キャッシュから評価値を取得
    */
-  get(board: Board, depth: number): CacheEntry | null {
-    const key = computeBoardHash(board);
+  get(board: Board, depth: number, originalPlayer: Player, maximizingPlayer: boolean): CacheEntry | null {
+    const boardHash = computeBoardHash(board);
+    const key = `${boardHash}_${originalPlayer}_${maximizingPlayer}_${depth}`;
     const entry = this.cache.get(key);
 
-    if (entry && entry.depth >= depth) {
+    if (entry) {
       // キャッシュヒット
       this.hits++;
       // LRU更新のため、エントリを削除して再追加
@@ -47,15 +48,10 @@ export class BoardCache {
   /**
    * キャッシュに評価値を保存
    */
-  set(board: Board, evaluation: number, bestMove: Position | null, depth: number): void {
-    const key = computeBoardHash(board);
+  set(board: Board, evaluation: number, bestMove: Position | null, depth: number, originalPlayer: Player, maximizingPlayer: boolean): void {
+    const boardHash = computeBoardHash(board);
+    const key = `${boardHash}_${originalPlayer}_${maximizingPlayer}_${depth}`;
     
-    // 既存のエントリがある場合、より深い探索結果のみ保存
-    const existing = this.cache.get(key);
-    if (existing && existing.depth > depth) {
-      return;
-    }
-
     // キャッシュサイズ制限に達した場合、最も古いエントリを削除
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;

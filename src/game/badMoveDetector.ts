@@ -15,6 +15,7 @@ export interface BadMoveResult {
   rank?: number; // 順位
   totalMoves?: number; // 有効な手の総数
   percentile?: number; // パーセンタイル
+  allMoves?: Array<{ position: Position; score: number; depth: number }>; // 全ての合法手とその評価値
 }
 
 export class BadMoveDetector {
@@ -219,6 +220,7 @@ export class BadMoveDetector {
       rank: analysis.rank,
       totalMoves: analysis.totalMoves,
       percentile: analysis.percentile,
+      allMoves: analysis.allMoves,
     };
   }
 

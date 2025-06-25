@@ -1,7 +1,7 @@
-import { getAllValidMoves, makeMove } from '../game/rules';
+import { getAllValidMoves, makeMove, getOpponent } from '../game/rules';
 import type { Board, Player, Position } from '../game/types';
-import { evaluateBoard } from './evaluation';
 import { analyzeMove } from './evaluationReasons';
+import { minimax } from './minimax';
 import type { MoveEvaluation } from './types';
 
 export interface MoveAnalysis {
@@ -13,6 +13,7 @@ export interface MoveAnalysis {
   rank?: number; // 順位（1が最善手）
   totalMoves?: number; // 有効な手の総数
   percentile?: number; // パーセンタイル（0-100）
+  allMoves?: MoveEvaluation[]; // 全ての合法手とその評価値
 }
 
 export const analyzeBadMove = (
@@ -31,11 +32,20 @@ export const analyzeBadMove = (
     return null;
   }
 
-  // 各手の評価値を計算
+  // 各手の評価値を計算（深さ4の探索）
   const moveScores: MoveEvaluation[] = [];
   for (const move of validMoves) {
     const newBoard = makeMove(board, move, player);
-    const score = evaluateBoard(newBoard, player);
+    // 深さ4の探索で評価
+    const score = minimax(
+      newBoard,
+      getOpponent(player),
+      aiDepth - 1,
+      -1000000,
+      1000000,
+      false,
+      player
+    );
     moveScores.push({
       position: { row: move.row, col: move.col },
       score,
@@ -115,6 +125,7 @@ export const analyzeBadMove = (
     rank: playerRank,
     totalMoves,
     percentile,
+    allMoves: moveScores,
   };
 };
 

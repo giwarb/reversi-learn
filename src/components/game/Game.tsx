@@ -27,6 +27,11 @@ export const Game: FC = () => {
     blackScore,
     whiteScore,
     isPassTurn,
+    useIterativeDeepening,
+    setUseIterativeDeepening,
+    aiThinkingDepth,
+    aiTimeLimit,
+    setAITimeLimit,
   } = useGameWithAI(true);
 
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -84,6 +89,8 @@ export const Game: FC = () => {
             isAIThinking={isAIThinking}
             playerColor={playerColor}
             isPassTurn={isPassTurn}
+            aiThinkingDepth={aiThinkingDepth}
+            useIterativeDeepening={useIterativeDeepening}
           />
           <Board
             board={gameState.board}
@@ -97,6 +104,10 @@ export const Game: FC = () => {
             aiLevel={aiLevel}
             onAILevelChange={setAILevel}
             isGameOver={gameState.gameOver}
+            useIterativeDeepening={useIterativeDeepening}
+            onIterativeDeepeningChange={setUseIterativeDeepening}
+            aiTimeLimit={aiTimeLimit}
+            onAITimeLimitChange={setAITimeLimit}
           />
         </div>
         <div className="game-right-section">

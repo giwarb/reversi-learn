@@ -7,6 +7,8 @@ interface GameInfoProps {
   isAIThinking: boolean;
   playerColor?: Player;
   isPassTurn?: boolean;
+  aiThinkingDepth?: number;
+  useIterativeDeepening?: boolean;
 }
 
 export const GameInfo: FC<GameInfoProps> = ({
@@ -14,32 +16,40 @@ export const GameInfo: FC<GameInfoProps> = ({
   isAIThinking,
   playerColor = 'black',
   isPassTurn = false,
+  aiThinkingDepth = 0,
+  useIterativeDeepening = false,
 }) => {
   const counts = countPieces(gameState.board);
 
   const getPlayerText = () => {
     if (gameState.gameOver) {
       if (gameState.winner === 'draw') {
-        return '引き分け';
+        return <span>引き分け</span>;
       }
-      return `${gameState.winner === 'black' ? '黒' : '白'}の勝利！`;
+      return <span>{gameState.winner === 'black' ? '黒' : '白'}の勝利！</span>;
     }
 
     if (isPassTurn) {
-      return `${gameState.currentPlayer === 'black' ? '黒' : '白'}はパス`;
+      return <span>{gameState.currentPlayer === 'black' ? '黒' : '白'}はパス</span>;
     }
 
     if (isAIThinking) {
-      return 'AIが考えています...';
+      return (
+        <span className="ai-thinking-container">
+          AIが考えています
+          {useIterativeDeepening && aiThinkingDepth > 0 && ` (深さ: ${aiThinkingDepth})`}
+          <span className="spinner" />
+        </span>
+      );
     }
 
-    return `${gameState.currentPlayer === 'black' ? '黒' : '白'}の番`;
+    return <span>{gameState.currentPlayer === 'black' ? '黒' : '白'}の番</span>;
   };
 
   return (
     <div className="game-info">
       <div className="current-player">
-        <span>{getPlayerText()}</span>
+        {getPlayerText()}
         {!gameState.gameOver && <span className={`player-indicator ${gameState.currentPlayer}`} />}
       </div>
       <div className="score">
