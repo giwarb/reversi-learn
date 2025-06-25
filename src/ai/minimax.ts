@@ -1,6 +1,7 @@
 import { checkGameOver } from '../game/gameState';
 import { getAllValidMoves, getOpponent, makeMove } from '../game/rules';
 import type { Board, GameState, Player } from '../game/types';
+import { globalBoardCache } from './cache/boardCache';
 import { evaluateBoard } from './evaluation';
 import type { MoveEvaluation } from './types';
 
@@ -16,9 +17,17 @@ export const minimax = (
   maximizingPlayer: boolean,
   originalPlayer: Player
 ): number => {
+  // キャッシュをチェック
+  const cached = globalBoardCache.get(board, depth);
+  if (cached !== null) {
+    return cached.evaluation;
+  }
+
   // 深さ0または終了状態なら評価値を返す
   if (depth === 0) {
-    return evaluateBoard(board, originalPlayer);
+    const evaluation = evaluateBoard(board, originalPlayer);
+    globalBoardCache.set(board, evaluation, null, 0);
+    return evaluation;
   }
 
   const validMoves = getAllValidMoves(board, player);
@@ -55,6 +64,7 @@ export const minimax = (
 
   if (maximizingPlayer) {
     let maxEval = MIN_SCORE;
+    let bestMove = null;
 
     for (const move of validMoves) {
       const newBoard = makeMove(board, move, player);
@@ -68,7 +78,10 @@ export const minimax = (
         originalPlayer
       );
 
-      maxEval = Math.max(maxEval, evaluation);
+      if (evaluation > maxEval) {
+        maxEval = evaluation;
+        bestMove = move;
+      }
       alpha = Math.max(alpha, evaluation);
 
       if (beta <= alpha) {
@@ -76,9 +89,12 @@ export const minimax = (
       }
     }
 
+    // 結果をキャッシュに保存
+    globalBoardCache.set(board, maxEval, bestMove, depth);
     return maxEval;
   } else {
     let minEval = MAX_SCORE;
+    let bestMove = null;
 
     for (const move of validMoves) {
       const newBoard = makeMove(board, move, player);
@@ -92,7 +108,10 @@ export const minimax = (
         originalPlayer
       );
 
-      minEval = Math.min(minEval, evaluation);
+      if (evaluation < minEval) {
+        minEval = evaluation;
+        bestMove = move;
+      }
       beta = Math.min(beta, evaluation);
 
       if (beta <= alpha) {
@@ -100,6 +119,8 @@ export const minimax = (
       }
     }
 
+    // 結果をキャッシュに保存
+    globalBoardCache.set(board, minEval, bestMove, depth);
     return minEval;
   }
 };
@@ -109,6 +130,16 @@ export const findBestMove = (
   player: Player,
   maxDepth: number
 ): MoveEvaluation | null => {
+  // まずキャッシュをチェック
+  const cached = globalBoardCache.get(board, maxDepth);
+  if (cached !== null && cached.bestMove) {
+    return {
+      position: cached.bestMove,
+      score: cached.evaluation,
+      depth: maxDepth,
+    };
+  }
+
   const validMoves = getAllValidMoves(board, player);
 
   if (validMoves.length === 0) {
@@ -118,7 +149,22 @@ export const findBestMove = (
   let bestMove: MoveEvaluation | null = null;
   let bestScore = MIN_SCORE;
 
-  for (const move of validMoves) {
+  // ムーブオーダリング：角と辺を優先的に探索
+  const orderedMoves = [...validMoves].sort((a, b) => {
+    const isCornerA = (a.row === 0 || a.row === 7) && (a.col === 0 || a.col === 7);
+    const isCornerB = (b.row === 0 || b.row === 7) && (b.col === 0 || b.col === 7);
+    if (isCornerA && !isCornerB) return -1;
+    if (!isCornerA && isCornerB) return 1;
+    
+    const isEdgeA = a.row === 0 || a.row === 7 || a.col === 0 || a.col === 7;
+    const isEdgeB = b.row === 0 || b.row === 7 || b.col === 0 || b.col === 7;
+    if (isEdgeA && !isEdgeB) return -1;
+    if (!isEdgeA && isEdgeB) return 1;
+    
+    return 0;
+  });
+
+  for (const move of orderedMoves) {
     const newBoard = makeMove(board, move, player);
     const score = minimax(
       newBoard,
@@ -138,6 +184,11 @@ export const findBestMove = (
         depth: maxDepth,
       };
     }
+  }
+
+  // 最善手をキャッシュに保存
+  if (bestMove) {
+    globalBoardCache.set(board, bestScore, bestMove.position, maxDepth);
   }
 
   return bestMove;

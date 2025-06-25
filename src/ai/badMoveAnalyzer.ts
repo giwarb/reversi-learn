@@ -272,10 +272,13 @@ export const analyzeDetailedBadMove = (
   board: Board,
   playerMove: Position,
   player: Player,
-  aiDepth: number
+  aiDepth: number,
+  aiEvaluation?: ReturnType<typeof findBestMove> // オプショナルパラメータとして受け取る
 ): DetailedBadMoveAnalysis => {
-  // AIの最善手を取得
-  const aiEvaluation = findBestMove(board, player, aiDepth);
+  // AIの最善手を取得（既に計算済みの場合は使い回す）
+  if (!aiEvaluation) {
+    aiEvaluation = findBestMove(board, player, aiDepth);
+  }
   const bestMove = aiEvaluation ? aiEvaluation.position : null;
 
   // 評価値の差を計算

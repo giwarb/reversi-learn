@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ReversiAI } from '../ai/ai';
+import { globalBoardCache } from '../ai/cache/boardCache';
+import { globalValidMovesCache } from '../ai/cache/validMovesCache';
 import { evaluateBoard } from '../ai/evaluation';
 import type { BadMoveResult } from '../game/badMoveDetector';
 import { BadMoveDetector } from '../game/badMoveDetector';
@@ -101,6 +103,9 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     setLastMoveAnalysis(null);
     setIsAIThinking(false);
     setIsPassTurn(false);
+    // キャッシュをクリア
+    globalBoardCache.clear();
+    globalValidMovesCache.clear();
   }, []);
 
   const resetGameWithColor = useCallback(
@@ -111,6 +116,9 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
       setLastMoveAnalysis(null);
       setIsAIThinking(false);
       setIsPassTurn(false);
+      // キャッシュをクリア
+      globalBoardCache.clear();
+      globalValidMovesCache.clear();
 
       // 後手（白）を選んだ場合、AIに最初の一手を打たせる
       if (playAgainstAI && newPlayerColor === 'white') {

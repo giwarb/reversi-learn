@@ -32,7 +32,7 @@ export class BadMoveDetector {
     player: Player,
     playerColor: Player
   ): BadMoveResult {
-    // AIの推奨手を取得
+    // AIの推奨手を取得（一度だけ計算）
     const aiEvaluation = findBestMove(boardBeforeMove, player, this.ai.getDepth());
     const aiRecommendation = aiEvaluation ? aiEvaluation.position : null;
 
@@ -52,12 +52,13 @@ export class BadMoveDetector {
     // 悪手かどうかを判定（順位ベース）
     const isBadMove = analysis.isBadMove;
 
-    // 詳細な分析を実行（常に実行して理由を取得）
+    // 詳細な分析を実行（aiEvaluationを渡して重複計算を避ける）
     const detailedAnalysis = analyzeDetailedBadMove(
       boardBeforeMove,
       playerMove,
       player,
-      this.ai.getDepth()
+      this.ai.getDepth(),
+      aiEvaluation // 既に計算済みの結果を渡す
     );
 
     // 説明文を生成

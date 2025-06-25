@@ -1,3 +1,4 @@
+import { globalValidMovesCache } from '../ai/cache/validMovesCache';
 import { BOARD_SIZE, DIRECTIONS } from './constants';
 import type { Board, Player, Position, ValidMove } from './types';
 
@@ -57,16 +58,32 @@ export const getValidMove = (
 };
 
 export const getAllValidMoves = (board: Board, player: Player): ValidMove[] => {
+  // キャッシュから取得を試みる
+  const cached = globalValidMovesCache.get(board, player);
+  if (cached !== null) {
+    // ValidMove型に変換して返す
+    return cached.map(pos => {
+      const move = getValidMove(board, pos, player);
+      return move!; // キャッシュされた位置は必ず有効
+    });
+  }
+
+  // キャッシュミスの場合は計算
   const validMoves: ValidMove[] = [];
+  const positions: Position[] = [];
 
   for (let row = 0; row < BOARD_SIZE; row++) {
     for (let col = 0; col < BOARD_SIZE; col++) {
       const move = getValidMove(board, { row, col }, player);
       if (move) {
         validMoves.push(move);
+        positions.push({ row: move.row, col: move.col });
       }
     }
   }
+
+  // 結果をキャッシュに保存
+  globalValidMovesCache.set(board, player, positions);
 
   return validMoves;
 };
