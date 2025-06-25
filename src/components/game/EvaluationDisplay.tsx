@@ -6,22 +6,20 @@ import './EvaluationDisplay.css';
 
 interface EvaluationDisplayProps {
   board: Board;
-  blackScore: number;
-  whiteScore: number;
+  evaluation: number;
   currentPlayer: Player;
   playerColor: Player;
 }
 
 export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
   board,
-  blackScore: blackRawScore,
-  whiteScore: whiteRawScore,
+  evaluation,
   currentPlayer,
   playerColor,
 }) => {
   const [showExplanation, setShowExplanation] = useState(false);
   // 正規化されたスコアを取得（0-100範囲、50が均衡）
-  const { blackScore, whiteScore } = getNormalizedScores(blackRawScore, whiteRawScore);
+  const { blackScore, whiteScore } = getNormalizedScores(evaluation);
   const playerScore = playerColor === 'black' ? blackScore : whiteScore;
   const aiScore = playerColor === 'black' ? whiteScore : blackScore;
 

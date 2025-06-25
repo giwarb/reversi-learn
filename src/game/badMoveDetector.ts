@@ -129,38 +129,13 @@ export class BadMoveDetector {
           // プレイヤーの色はplayerColor引数から取得
 
           // あなたの手の評価値（正規化）
-          const playerMoveScores = getNormalizedScores(
-            playerColor === 'black'
-              ? detailedAnalysis.evaluationAfterPlayerMove
-              : -detailedAnalysis.evaluationAfterPlayerMove,
-            playerColor === 'white'
-              ? detailedAnalysis.evaluationAfterPlayerMove
-              : -detailedAnalysis.evaluationAfterPlayerMove
-          );
-          const afterOpponentScores = getNormalizedScores(
-            playerColor === 'black'
-              ? detailedAnalysis.evaluationAfterOpponentResponse
-              : -detailedAnalysis.evaluationAfterOpponentResponse,
-            playerColor === 'white'
-              ? detailedAnalysis.evaluationAfterOpponentResponse
-              : -detailedAnalysis.evaluationAfterOpponentResponse
-          );
+          const playerMoveScores = getNormalizedScores(detailedAnalysis.evaluationAfterPlayerMove);
+          const afterOpponentScores = getNormalizedScores(detailedAnalysis.evaluationAfterOpponentResponse);
 
           // 推奨手の評価値（正規化）
-          const bestMoveInitialScore =
-            detailedAnalysis.evaluationAfterPlayerMove + detailedAnalysis.scoreDifference;
-          const bestMoveScores = getNormalizedScores(
-            playerColor === 'black' ? bestMoveInitialScore : -bestMoveInitialScore,
-            playerColor === 'white' ? bestMoveInitialScore : -bestMoveInitialScore
-          );
-          const bestMoveAfterScores = getNormalizedScores(
-            playerColor === 'black'
-              ? detailedAnalysis.bestMoveEvaluationAfterOpponent
-              : -detailedAnalysis.bestMoveEvaluationAfterOpponent,
-            playerColor === 'white'
-              ? detailedAnalysis.bestMoveEvaluationAfterOpponent
-              : -detailedAnalysis.bestMoveEvaluationAfterOpponent
-          );
+          const bestMoveInitialScore = detailedAnalysis.evaluationAfterPlayerMove + detailedAnalysis.scoreDifference;
+          const bestMoveScores = getNormalizedScores(bestMoveInitialScore);
+          const bestMoveAfterScores = getNormalizedScores(detailedAnalysis.bestMoveEvaluationAfterOpponent);
 
           const playerScore =
             playerColor === 'black' ? playerMoveScores.blackScore : playerMoveScores.whiteScore;

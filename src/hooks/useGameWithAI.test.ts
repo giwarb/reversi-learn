@@ -63,7 +63,7 @@ describe('useGameWithAI', () => {
     expect(result.current.aiLevel).toBe(6);
   });
 
-  it('ゲーム中にAIレベルを変更するとゲームがリセットされる', () => {
+  it('ゲーム中にAIレベルを変更してもゲームは継続される', () => {
     const { result } = renderHook(() => useGameWithAI(false));
 
     // ゲームを進める
@@ -79,9 +79,9 @@ describe('useGameWithAI', () => {
       result.current.setAILevel(5);
     });
 
-    // ゲームがリセットされていることを確認
-    expect(result.current.gameState.moveHistory).toHaveLength(0);
-    expect(result.current.gameState.currentPlayer).toBe('black');
+    // ゲームが継続されていることを確認（リセットされない）
+    expect(result.current.gameState.moveHistory).toHaveLength(1);
+    expect(result.current.gameState.currentPlayer).toBe('white');
     expect(result.current.aiLevel).toBe(5);
   });
 

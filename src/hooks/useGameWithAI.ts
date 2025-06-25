@@ -70,26 +70,17 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
       // 悪手検出（人間のプレイヤーの手のみ）
       if (gameState.currentPlayer === playerColor) {
         // 手を打つ前の深さ4の評価値を保存
-        const beforeBlackScore = minimax(
+        const beforeEvaluation = minimax(
           boardBeforeMove,
-          'black',
+          gameState.currentPlayer,
           4,
           -1000000,
           1000000,
-          true,
-          'black'
+          gameState.currentPlayer === 'black',
+          gameState.currentPlayer
         );
-        const beforeWhiteScore = minimax(
-          boardBeforeMove,
-          'white',
-          4,
-          -1000000,
-          1000000,
-          true,
-          'white'
-        );
-        setBeforeMoveBlackScore(beforeBlackScore);
-        setBeforeMoveWhiteScore(beforeWhiteScore);
+        setBeforeMoveBlackScore(beforeEvaluation);
+        setBeforeMoveWhiteScore(beforeEvaluation);
 
         const analysis = badMoveDetector.detectBadMove(
           boardBeforeMove,
@@ -279,25 +270,19 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   useEffect(() => {
     // 非同期で深さ4の評価値を計算
     const calculateDeepScores = async () => {
-      // 現在の手番のプレイヤーの視点から見た評価値を計算
-      const currentPlayerScore = minimax(
+      // 絶対的な評価値を計算（マイナス=黒有利、プラス=白有利）
+      const evaluation = minimax(
         gameState.board,
         gameState.currentPlayer,
         4,
         -1000000,
         1000000,
-        true,
+        gameState.currentPlayer === 'black',
         gameState.currentPlayer
       );
       
-      // 黒と白それぞれの評価値に変換
-      if (gameState.currentPlayer === 'black') {
-        setDeepBlackScore(currentPlayerScore);
-        setDeepWhiteScore(-currentPlayerScore);
-      } else {
-        setDeepWhiteScore(currentPlayerScore);
-        setDeepBlackScore(-currentPlayerScore);
-      }
+      setDeepBlackScore(evaluation);
+      setDeepWhiteScore(evaluation);
     };
     
     calculateDeepScores();

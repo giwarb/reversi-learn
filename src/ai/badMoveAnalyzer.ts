@@ -301,7 +301,7 @@ export const analyzeDetailedBadMove = (
   }
 
   const playerBoard = makeMove(board, playerValidMove, player);
-  const playerScore = evaluateBoard(playerBoard, player);
+  const playerScore = evaluateBoard(playerBoard);
 
   let bestScore = playerScore;
   let bestMoveBoard: Board | null = null;
@@ -309,7 +309,7 @@ export const analyzeDetailedBadMove = (
     const bestValidMove = getValidMove(board, bestMove, player);
     if (bestValidMove) {
       bestMoveBoard = makeMove(board, bestValidMove, player);
-      bestScore = evaluateBoard(bestMoveBoard, player);
+      bestScore = evaluateBoard(bestMoveBoard);
     }
   }
 
@@ -365,7 +365,7 @@ export const analyzeDetailedBadMove = (
     const opponentValidMove = getValidMove(newBoard, opponentBestResponse, opponent);
     if (opponentValidMove) {
       const afterOpponentBoard = makeMove(newBoard, opponentValidMove, opponent);
-      evaluationAfterOpponentResponse = evaluateBoard(afterOpponentBoard, player);
+      evaluationAfterOpponentResponse = evaluateBoard(afterOpponentBoard);
       evaluationChangeFromOpponent = evaluationAfterOpponentResponse - playerScore;
 
       const playerFutureMoves = getAllValidMoves(afterOpponentBoard, player);
@@ -395,7 +395,7 @@ export const analyzeDetailedBadMove = (
           opponentValidMoveToBestMove,
           opponent
         );
-        bestMoveEvaluationAfterOpponent = evaluateBoard(afterOpponentBestMoveBoard, player);
+        bestMoveEvaluationAfterOpponent = evaluateBoard(afterOpponentBestMoveBoard);
         bestMoveEvaluationChange = bestMoveEvaluationAfterOpponent - bestScore;
       }
     }

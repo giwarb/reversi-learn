@@ -113,8 +113,7 @@ export const Game: FC = () => {
         <div className="game-right-section">
           <EvaluationDisplay
             board={gameState.board}
-            blackScore={blackScore}
-            whiteScore={whiteScore}
+            evaluation={blackScore}
             currentPlayer={gameState.currentPlayer}
             playerColor={playerColor}
           />

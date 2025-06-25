@@ -4,35 +4,30 @@ import { getAdvantageText, getNormalizedScores, normalizeEvaluation } from './ev
 describe('evaluationNormalizer', () => {
   describe('normalizeEvaluation', () => {
     it('均衡状態（0）を50に変換', () => {
-      expect(normalizeEvaluation(0, 'black')).toBe(50);
-      expect(normalizeEvaluation(0, 'white')).toBe(50);
+      expect(normalizeEvaluation(0)).toBe(50);
     });
 
-    it('黒有利の場合、黒は50より大きく、白は50より小さい', () => {
-      const blackScore = normalizeEvaluation(50, 'black');
-      const whiteScore = normalizeEvaluation(50, 'white');
-
-      expect(blackScore).toBeGreaterThan(50);
-      expect(whiteScore).toBeLessThan(50);
+    it('黒有利（マイナス値）の場合は0-50の範囲', () => {
+      const score = normalizeEvaluation(-50); // 黒有利
+      expect(score).toBeLessThan(50);
+      expect(score).toBeGreaterThanOrEqual(0);
     });
 
     it('最大値と最小値を0-100の範囲内に収める', () => {
-      expect(normalizeEvaluation(200, 'black')).toBe(100);
-      expect(normalizeEvaluation(-200, 'black')).toBe(0);
-      expect(normalizeEvaluation(-200, 'white')).toBe(100);
-      expect(normalizeEvaluation(200, 'white')).toBe(0);
+      expect(normalizeEvaluation(200)).toBe(100); // 白優勢
+      expect(normalizeEvaluation(-200)).toBe(0); // 黒優勢
     });
   });
 
   describe('getNormalizedScores', () => {
     it('均衡状態では両者とも50', () => {
-      const { blackScore, whiteScore } = getNormalizedScores(0, 0);
+      const { blackScore, whiteScore } = getNormalizedScores(0);
       expect(blackScore).toBe(50);
       expect(whiteScore).toBe(50);
     });
 
     it('黒が有利な場合の正規化', () => {
-      const { blackScore, whiteScore } = getNormalizedScores(50, 0);
+      const { blackScore, whiteScore } = getNormalizedScores(-50); // 黒有利
       expect(blackScore).toBeGreaterThan(50);
       expect(whiteScore).toBeLessThan(50);
       // スコアの合計は常に100
@@ -40,7 +35,7 @@ describe('evaluationNormalizer', () => {
     });
 
     it('白が有利な場合の正規化', () => {
-      const { blackScore, whiteScore } = getNormalizedScores(0, 50);
+      const { blackScore, whiteScore } = getNormalizedScores(50); // 白有利
       expect(blackScore).toBeLessThan(50);
       expect(whiteScore).toBeGreaterThan(50);
       expect(blackScore + whiteScore).toBe(100);

@@ -25,7 +25,7 @@ export const minimax = (
 
   // 深さ0または終了状態なら評価値を返す
   if (depth === 0) {
-    const evaluation = evaluateBoard(board, originalPlayer);
+    const evaluation = evaluateBoard(board);
     globalBoardCache.set(board, evaluation, null, 0, originalPlayer, maximizingPlayer);
     return evaluation;
   }
@@ -49,10 +49,10 @@ export const minimax = (
       };
       const finalState = checkGameOver(tempState);
 
-      if (finalState.winner === originalPlayer) {
-        return MAX_SCORE - (10 - depth);
-      } else if (finalState.winner === getOpponent(originalPlayer)) {
+      if (finalState.winner === 'black') {
         return MIN_SCORE + (10 - depth);
+      } else if (finalState.winner === 'white') {
+        return MAX_SCORE - (10 - depth);
       } else {
         return 0;
       }
@@ -157,7 +157,7 @@ export const findBestMoveIterativeDeepening = (
     const orderedMoves = orderMoves(validMoves, previousBestMove);
     
     let bestMove: MoveEvaluation | null = null;
-    let bestScore = MIN_SCORE;
+    let bestScore = player === 'black' ? MAX_SCORE : MIN_SCORE;
     let alpha = MIN_SCORE;
     let beta = MAX_SCORE;
 
@@ -176,11 +176,20 @@ export const findBestMoveIterativeDeepening = (
         currentDepth - 1,
         alpha,
         beta,
-        false,
+        player === 'black',
         player
       );
 
-      if (score > bestScore) {
+      if (player === 'black' && score < bestScore) {
+        bestScore = score;
+        bestMove = {
+          position: { row: move.row, col: move.col },
+          score,
+          depth: currentDepth,
+          timeSpent: Date.now() - startTime,
+        };
+        beta = Math.min(beta, score);
+      } else if (player === 'white' && score > bestScore) {
         bestScore = score;
         bestMove = {
           position: { row: move.row, col: move.col },
@@ -269,7 +278,7 @@ export const findBestMove = (
   }
 
   let bestMove: MoveEvaluation | null = null;
-  let bestScore = MIN_SCORE;
+  let bestScore = player === 'black' ? MAX_SCORE : MIN_SCORE;
 
   // ムーブオーダリング：角と辺を優先的に探索
   const orderedMoves = [...validMoves].sort((a, b) => {
@@ -294,11 +303,18 @@ export const findBestMove = (
       maxDepth - 1,
       MIN_SCORE,
       MAX_SCORE,
-      false,
+      player === 'black',
       player
     );
 
-    if (score > bestScore) {
+    if (player === 'black' && score < bestScore) {
+      bestScore = score;
+      bestMove = {
+        position: { row: move.row, col: move.col },
+        score,
+        depth: maxDepth,
+      };
+    } else if (player === 'white' && score > bestScore) {
       bestScore = score;
       bestMove = {
         position: { row: move.row, col: move.col },

@@ -1,6 +1,6 @@
 import { countPieces } from '../game/board';
-import { getAllValidMoves, getOpponent } from '../game/rules';
-import type { Board, Player } from '../game/types';
+import { getAllValidMoves } from '../game/rules';
+import type { Board } from '../game/types';
 
 // 位置の重み（角が最も価値が高い）
 const POSITION_WEIGHTS = [
@@ -14,17 +14,17 @@ const POSITION_WEIGHTS = [
   [100, -20, 10, 5, 5, 10, -20, 100],
 ];
 
-export const evaluatePosition = (board: Board, player: Player): number => {
+export const evaluatePosition = (board: Board): number => {
   let score = 0;
 
-  // 位置による評価
+  // 位置による評価（マイナス=黒有利、プラス=白有利）
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
       const cell = board[row][col];
-      if (cell === player) {
-        score += POSITION_WEIGHTS[row][col];
-      } else if (cell === getOpponent(player)) {
+      if (cell === 'black') {
         score -= POSITION_WEIGHTS[row][col];
+      } else if (cell === 'white') {
+        score += POSITION_WEIGHTS[row][col];
       }
     }
   }
@@ -32,53 +32,51 @@ export const evaluatePosition = (board: Board, player: Player): number => {
   return score;
 };
 
-export const evaluateMobility = (board: Board, player: Player): number => {
-  const playerMoves = getAllValidMoves(board, player);
-  const opponentMoves = getAllValidMoves(board, getOpponent(player));
+export const evaluateMobility = (board: Board): number => {
+  const blackMoves = getAllValidMoves(board, 'black');
+  const whiteMoves = getAllValidMoves(board, 'white');
 
-  if (playerMoves.length + opponentMoves.length !== 0) {
+  if (blackMoves.length + whiteMoves.length !== 0) {
     return (
-      (100 * (playerMoves.length - opponentMoves.length)) /
-      (playerMoves.length + opponentMoves.length)
+      (100 * (whiteMoves.length - blackMoves.length)) /
+      (blackMoves.length + whiteMoves.length)
     );
   }
 
   return 0;
 };
 
-export const evaluatePieceCount = (board: Board, player: Player): number => {
+export const evaluatePieceCount = (board: Board): number => {
   const counts = countPieces(board);
-  const playerCount = player === 'black' ? counts.black : counts.white;
-  const opponentCount = player === 'black' ? counts.white : counts.black;
 
-  if (playerCount + opponentCount !== 0) {
-    return (100 * (playerCount - opponentCount)) / (playerCount + opponentCount);
+  if (counts.black + counts.white !== 0) {
+    return (100 * (counts.white - counts.black)) / (counts.black + counts.white);
   }
 
   return 0;
 };
 
-export const evaluateBoard = (board: Board, player: Player): number => {
+export const evaluateBoard = (board: Board): number => {
   const counts = countPieces(board);
   const totalPieces = counts.black + counts.white;
 
-  // ゲームの進行度に応じて評価の重みを変える
+  // ゲームの進行度に応じて評価の重みを変える（マイナス=黒有利、プラス=白有利）
   if (totalPieces < 20) {
     // 序盤：位置と着手可能数を重視
-    return evaluatePosition(board, player) + evaluateMobility(board, player) * 2;
+    return evaluatePosition(board) + evaluateMobility(board) * 2;
   } else if (totalPieces < 40) {
     // 中盤：バランスよく評価
     return (
-      evaluatePosition(board, player) +
-      evaluateMobility(board, player) +
-      evaluatePieceCount(board, player) * 0.5
+      evaluatePosition(board) +
+      evaluateMobility(board) +
+      evaluatePieceCount(board) * 0.5
     );
   } else {
     // 終盤：石の数を重視
     return (
-      evaluatePosition(board, player) * 0.5 +
-      evaluateMobility(board, player) * 0.5 +
-      evaluatePieceCount(board, player) * 2
+      evaluatePosition(board) * 0.5 +
+      evaluateMobility(board) * 0.5 +
+      evaluatePieceCount(board) * 2
     );
   }
 };

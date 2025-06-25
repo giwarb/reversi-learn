@@ -60,27 +60,15 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
   const evalB = useMemo(() => {
     // 現在の手番を判定（プレイヤーが打った後なので相手の手番）
     const currentPlayer = playerColor === 'black' ? 'white' : 'black';
-    // 現在の手番の視点から見た評価値を計算
-    const currentPlayerScore = minimax(boardB, currentPlayer, 4, -1000000, 1000000, true, currentPlayer);
-    // 黒と白それぞれの評価値に変換
-    if (currentPlayer === 'black') {
-      return { blackScore: currentPlayerScore, whiteScore: -currentPlayerScore };
-    } else {
-      return { blackScore: -currentPlayerScore, whiteScore: currentPlayerScore };
-    }
+    // minimaxで評価値を計算
+    return minimax(boardB, currentPlayer, 4, -1000000, 1000000, currentPlayer === 'black', currentPlayer);
   }, [boardB, playerColor]);
   
   const evalD = useMemo(() => {
     // 現在の手番を判定（プレイヤーが打った後なので相手の手番）
     const currentPlayer = playerColor === 'black' ? 'white' : 'black';
-    // 現在の手番の視点から見た評価値を計算
-    const currentPlayerScore = minimax(boardD, currentPlayer, 4, -1000000, 1000000, true, currentPlayer);
-    // 黒と白それぞれの評価値に変換
-    if (currentPlayer === 'black') {
-      return { blackScore: currentPlayerScore, whiteScore: -currentPlayerScore };
-    } else {
-      return { blackScore: -currentPlayerScore, whiteScore: currentPlayerScore };
-    }
+    // minimaxで評価値を計算
+    return minimax(boardD, currentPlayer, 4, -1000000, 1000000, currentPlayer === 'black', currentPlayer);
   }, [boardD, playerColor]);
   
   // 各盤面の詳細分析
@@ -256,10 +244,7 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                     <div className="board-evaluation">
                       <div className="eval-score">
                         {(() => {
-                          const { blackScore, whiteScore } = getNormalizedScores(
-                            evalB.blackScore,
-                            evalB.whiteScore
-                          );
+                          const { blackScore, whiteScore } = getNormalizedScores(evalB);
                           const playerScore = playerColor === 'black' ? blackScore : whiteScore;
                           const aiScore = playerColor === 'black' ? whiteScore : blackScore;
                           return `あなた: ${playerScore.toFixed(1)} vs AI: ${aiScore.toFixed(1)}`;
@@ -324,10 +309,7 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                       <div className="board-evaluation">
                         <div className="eval-score">
                           {(() => {
-                            const { blackScore, whiteScore } = getNormalizedScores(
-                              evalD.blackScore,
-                              evalD.whiteScore
-                            );
+                            const { blackScore, whiteScore } = getNormalizedScores(evalD);
                             const playerScore = playerColor === 'black' ? blackScore : whiteScore;
                             const aiScore = playerColor === 'black' ? whiteScore : blackScore;
                             return `あなた: ${playerScore.toFixed(1)} vs AI: ${aiScore.toFixed(1)}`;
@@ -371,22 +353,8 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                     // const validMove = getValidMove(boardA, move.position, playerColor);
                     // const boardAfterMove = validMove ? makeMove(boardA, validMove, playerColor) : boardA;
                     
-                    // 深さ4の探索で評価値を計算（相手の手番）
-                    const currentPlayer = playerColor === 'black' ? 'white' : 'black';
-                    const currentPlayerScore = move.score;
-                    
-                    // 黒と白の評価値に変換
-                    let blackScore, whiteScore;
-                    if (currentPlayer === 'black') {
-                      blackScore = currentPlayerScore;
-                      whiteScore = -currentPlayerScore;
-                    } else {
-                      blackScore = -currentPlayerScore;
-                      whiteScore = currentPlayerScore;
-                    }
-                    
                     // 正規化されたスコアを取得
-                    const normalizedScores = getNormalizedScores(blackScore, whiteScore);
+                    const normalizedScores = getNormalizedScores(move.score);
                     const playerNormalizedScore = playerColor === 'black' ? normalizedScores.blackScore : normalizedScores.whiteScore;
                     const aiNormalizedScore = playerColor === 'black' ? normalizedScores.whiteScore : normalizedScores.blackScore;
                     
