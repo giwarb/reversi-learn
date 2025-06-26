@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialBoard } from '../../game/board';
+import { copyBoard } from '../../game/boardUtils';
 import { getAllValidMoves, getValidMove, makeMove } from '../../game/rules';
 import type { Board } from '../../game/types';
 
@@ -58,7 +59,7 @@ describe('BadMoveDialog - デバッグテスト', () => {
     printBoard(board);
 
     // e6を打つ
-    const e6Board = JSON.parse(JSON.stringify(board)) as Board;
+    const e6Board = copyBoard(board);
     const e6Move = getValidMove(e6Board, { row: 4, col: 5 }, 'black');
     if (e6Move) {
       const afterE6 = makeMove(e6Board, e6Move, 'black');
@@ -76,7 +77,7 @@ describe('BadMoveDialog - デバッグテスト', () => {
     }
 
     // c2を打つ
-    const c2Board = JSON.parse(JSON.stringify(board)) as Board;
+    const c2Board = copyBoard(board);
     const c2Move = getValidMove(c2Board, { row: 1, col: 2 }, 'black');
     if (c2Move) {
       const afterC2 = makeMove(c2Board, c2Move, 'black');

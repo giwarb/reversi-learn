@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { DetailedBadMoveAnalysis } from '../../ai/badMoveAnalyzer';
 import type { BadMoveResult } from '../../game/badMoveDetector';
 import { createInitialBoard } from '../../game/board';
+import { copyBoard } from '../../game/boardUtils';
 import { getValidMove, makeMove } from '../../game/rules';
-import type { Board } from '../../game/types';
 import { BadMoveDialog } from './BadMoveDialog';
 
 describe('BadMoveDialog - ストーリーテスト', () => {
@@ -21,7 +21,7 @@ describe('BadMoveDialog - ストーリーテスト', () => {
     if (c3Move) board = makeMove(board, c3Move, 'white');
 
     // この時点が「手を打つ前の盤面」
-    const initialBoard = JSON.parse(JSON.stringify(board)) as Board;
+    const initialBoard = copyBoard(board);
 
     // c2 (1,2) - 黒の手（悪手）(row=2-1=1, col=c-a=2)
     const playerMove = { row: 1, col: 2 };
@@ -112,7 +112,7 @@ describe('BadMoveDialog - ストーリーテスト', () => {
     const c3Move = getValidMove(board, { row: 2, col: 2 }, 'white');
     if (c3Move) board = makeMove(board, c3Move, 'white');
 
-    const initialBoard = JSON.parse(JSON.stringify(board)) as Board;
+    const initialBoard = copyBoard(board);
 
     // c2 (1,2) - 黒の手（悪手）(row=2-1=1, col=c-a=2)
     const playerMove = { row: 1, col: 2 };
