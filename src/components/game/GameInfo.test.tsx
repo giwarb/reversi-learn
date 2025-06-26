@@ -31,7 +31,7 @@ describe('GameInfo', () => {
       <GameInfo gameState={gameState} isAIThinking={true} playerColor="black" isPassTurn={false} />
     );
 
-    expect(screen.getByText('AIが考えています...')).toBeInTheDocument();
+    expect(screen.getByText('AIが考えています')).toBeInTheDocument();
   });
 
   it('ゲーム終了時は勝者が表示される', () => {

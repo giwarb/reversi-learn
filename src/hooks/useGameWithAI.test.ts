@@ -148,7 +148,8 @@ describe('useGameWithAI', () => {
     expect(result.current.lastMoveAnalysis).toBeNull();
   });
 
-  it('AI思考中は打ち直しできない', async () => {
+  it('AI思考中は打ち直しできない', () => {
+    vi.useFakeTimers();
     const { result } = renderHook(() => useGameWithAI(true));
 
     // 手を打つとAIが思考開始
@@ -160,12 +161,15 @@ describe('useGameWithAI', () => {
     expect(result.current.isAIThinking).toBe(true);
     expect(result.current.canUndo).toBe(false);
 
-    // AIの思考が終わるまで待つ
-    await vi.waitFor(
-      () => {
-        expect(result.current.isAIThinking).toBe(false);
-      },
-      { timeout: 1000 }
-    );
+    // AIの思考が終わるまで時間を進める
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+
+    // AI思考が終了し、打ち直し可能になる
+    expect(result.current.isAIThinking).toBe(false);
+    expect(result.current.canUndo).toBe(true);
+
+    vi.useRealTimers();
   });
 });

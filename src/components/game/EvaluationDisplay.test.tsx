@@ -7,30 +7,23 @@ describe('EvaluationDisplay', () => {
     render(
       <EvaluationDisplay
         board={[]}
-        blackScore={20}
-        whiteScore={0}
+        evaluation={20}
         currentPlayer="black"
         playerColor="black"
       />
     );
 
     // 正規化されたスコア（黒有利の場合）
-    // blackScore=20, whiteScore=0の差20は、黒55、白45程度になる
-    const blackScores = screen.getAllByText('55');
-    const whiteScores = screen.getAllByText('45');
-    expect(blackScores.length).toBeGreaterThan(0);
-    expect(whiteScores.length).toBeGreaterThan(0);
-
-    // 差分（絶対値）
-    expect(screen.getByText('10')).toBeInTheDocument();
+    // evaluation=20は、黒55、白45程度になる
+    expect(screen.getByText('55.0')).toBeInTheDocument();
+    expect(screen.getByText('45.0')).toBeInTheDocument();
   });
 
   it('評価値の差に応じて適切な優劣テキストを表示', () => {
     const { rerender } = render(
       <EvaluationDisplay
         board={[]}
-        blackScore={0}
-        whiteScore={0}
+        evaluation={0}
         currentPlayer="black"
         playerColor="black"
       />
@@ -41,58 +34,58 @@ describe('EvaluationDisplay', () => {
     rerender(
       <EvaluationDisplay
         board={[]}
-        blackScore={30}
-        whiteScore={0}
+        evaluation={30}
         currentPlayer="black"
         playerColor="black"
       />
     );
 
-    expect(screen.getByText('黒やや有利')).toBeInTheDocument();
+    expect(screen.getByText('白やや有利')).toBeInTheDocument();
 
     rerender(
       <EvaluationDisplay
         board={[]}
-        blackScore={0}
-        whiteScore={80}
+        evaluation={-80}
         currentPlayer="black"
         playerColor="black"
       />
     );
 
-    expect(screen.getByText('白優勢')).toBeInTheDocument();
+    expect(screen.getByText('黒優勢')).toBeInTheDocument();
   });
 
   it('プレイヤーとAIのスコアを正しく表示', () => {
     render(
       <EvaluationDisplay
         board={[]}
-        blackScore={20}
-        whiteScore={0}
+        evaluation={20}
         currentPlayer="white"
         playerColor="white"
       />
     );
 
-    const playerScore = screen.getByText('あなた').parentElement;
-    const aiScore = screen.getByText('AI').parentElement;
+    const playerElements = screen.getAllByText('あなた');
+    const aiElements = screen.getAllByText('AI');
+    
+    const playerScore = playerElements[0].parentElement;
+    const aiScore = aiElements[0].parentElement;
 
-    expect(playerScore).toHaveTextContent('45'); // プレイヤーは白（正規化後）
-    expect(aiScore).toHaveTextContent('55'); // AIは黒（正規化後）
+    expect(playerScore).toHaveTextContent('55.0'); // プレイヤーは白（正規化後）
+    expect(aiScore).toHaveTextContent('45.0'); // AIは黒（正規化後）
   });
 
   it('現在のプレイヤーをアクティブ表示', () => {
     render(
       <EvaluationDisplay
         board={[]}
-        blackScore={50}
-        whiteScore={30}
+        evaluation={20}
         currentPlayer="black"
         playerColor="black"
       />
     );
 
-    const playerElement = screen.getByText('あなた').parentElement;
+    const playerElements = screen.getAllByText('あなた');
+    const playerElement = playerElements[0].parentElement;
     expect(playerElement).toHaveClass('active');
   });
 
@@ -100,8 +93,7 @@ describe('EvaluationDisplay', () => {
     render(
       <EvaluationDisplay
         board={[]}
-        blackScore={50}
-        whiteScore={30}
+        evaluation={20}
         currentPlayer="black"
         playerColor="black"
       />

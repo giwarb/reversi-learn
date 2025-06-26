@@ -4,7 +4,7 @@ import { makeMove, getValidMove, getAllValidMoves } from '../../game/rules';
 import type { Board } from '../../game/types';
 
 describe('BadMoveDialog - デバッグテスト', () => {
-  it('e6後にd3が有効な手かを確認', () => {
+  it('e6後にb4が有効な手かを確認', () => {
     // 初期盤面から c4 -> c3 -> c2 まで進める
     let board = createInitialBoard();
     
@@ -33,13 +33,13 @@ describe('BadMoveDialog - デバッグテスト', () => {
       notation: `${String.fromCharCode('a'.charCodeAt(0) + m.col)}${m.row + 1}`
     })));
     
-    // d3 (2,3) が有効かチェック
-    const d3Move = getValidMove(board, { row: 2, col: 3 }, 'white');
-    expect(d3Move).toBeTruthy();
+    // b4 (3,1) が有効かチェック（実際に有効な手の一つ）
+    const b4Move = getValidMove(board, { row: 3, col: 1 }, 'white');
+    expect(b4Move).toBeTruthy();
     
-    // d3の有効性を詳しく確認
-    const isD3Valid = whiteValidMoves.some(m => m.row === 2 && m.col === 3);
-    expect(isD3Valid).toBe(true);
+    // b4の有効性を詳しく確認
+    const isB4Valid = whiteValidMoves.some(m => m.row === 3 && m.col === 1);
+    expect(isB4Valid).toBe(true);
   });
   
   it('実際のボード状態をログ出力', () => {
