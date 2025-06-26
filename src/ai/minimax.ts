@@ -15,13 +15,13 @@ export const minimax = (
   alpha: number,
   beta: number
 ): number => {
-  // キャッシュをチェック
+  // Check cache for previously evaluated position
   const cached = globalBoardCache.get(board, depth, player, player === 'white');
   if (cached !== null) {
     return cached.evaluation;
   }
 
-  // 深さ0または終了状態なら評価値を返す
+  // Base case: return evaluation at depth 0
   if (depth === 0) {
     const evaluation = evaluateBoard(board);
     globalBoardCache.set(board, evaluation, null, 0, player, player === 'white');
@@ -30,12 +30,12 @@ export const minimax = (
 
   const validMoves = getAllValidMoves(board, player);
 
-  // 有効な手がない場合
+  // No valid moves available
   if (validMoves.length === 0) {
     const opponent = getOpponent(player);
     const opponentMoves = getAllValidMoves(board, opponent);
 
-    // 相手も打てない場合はゲーム終了
+    // If opponent also has no moves, game is over
     if (opponentMoves.length === 0) {
       const tempState: GameState = {
         board,
@@ -56,13 +56,13 @@ export const minimax = (
       }
     }
 
-    // パスの場合
+    // Pass turn to opponent
     return minimax(board, opponent, depth, alpha, beta);
   }
 
-  // 黒は最小化、白は最大化
+  // Minimax algorithm: black minimizes, white maximizes
   if (player === 'white') {
-    // 白：最大化
+    // White player: maximize score
     let maxEval = MIN_SCORE;
     let bestMove = null;
 
@@ -77,15 +77,15 @@ export const minimax = (
       alpha = Math.max(alpha, evaluation);
 
       if (beta <= alpha) {
-        break; // ベータカット
+        break; // Beta cutoff
       }
     }
 
-    // 結果をキャッシュに保存
+    // Store result in cache
     globalBoardCache.set(board, maxEval, bestMove, depth, player, true);
     return maxEval;
   } else {
-    // 黒：最小化
+    // Black player: minimize score
     let minEval = MAX_SCORE;
     let bestMove = null;
 
@@ -100,11 +100,11 @@ export const minimax = (
       beta = Math.min(beta, evaluation);
 
       if (beta <= alpha) {
-        break; // アルファカット
+        break; // Alpha cutoff
       }
     }
 
-    // 結果をキャッシュに保存
+    // Store result in cache
     globalBoardCache.set(board, minEval, bestMove, depth, player, false);
     return minEval;
   }
@@ -121,11 +121,11 @@ export const findBestMoveIterativeDeepening = (
   let previousBestMove: Position | null = null;
   const pv: Position[] = [];
 
-  // 深さ1から最大深さまで段階的に探索
+  // Iterative deepening: search from depth 1 to maxDepth
   for (let currentDepth = 1; currentDepth <= maxDepth; currentDepth++) {
     const depthStartTime = Date.now();
 
-    // 時間チェック - 残り時間が前回の探索時間の2倍未満なら打ち切り
+    // Time check: stop if remaining time is less than 2x previous search time
     const elapsedTime = depthStartTime - startTime;
     const remainingTime = timeLimitMs - elapsedTime;
 
@@ -138,7 +138,7 @@ export const findBestMoveIterativeDeepening = (
       return null;
     }
 
-    // ムーブオーダリング：前の深さの最善手を最初に探索
+    // Move ordering: search previous best move first
     const orderedMoves = orderMoves(validMoves, previousBestMove);
 
     let bestMove: MoveEvaluation | null = null;

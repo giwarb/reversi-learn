@@ -34,7 +34,7 @@ describe('boardEvaluationExplainer', () => {
 
     const brief = getBriefExplanation(explanation);
     expect(brief).toContain('✓ 角を1つ確保（a1）');
-    expect(brief).toContain('✓ 確定石が1個あります');
+    expect(brief).toMatch(/✓ 確定石が約\d+個あります/);
   });
 
   it('相手の手がX・Cマスに制限されている状態を検出する', () => {

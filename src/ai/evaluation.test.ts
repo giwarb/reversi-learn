@@ -4,16 +4,16 @@ import {
   evaluateBoard,
   evaluateMobility,
   evaluatePieceCount,
-  evaluatePosition,
+  evaluateStableDiscs,
 } from './evaluation';
 
-describe('evaluatePosition', () => {
+describe('evaluateStableDiscs', () => {
   it('黒が角を占めるとマイナス評価（黒有利）', () => {
     const board = createInitialBoard();
     board[0][0] = 'black';
     board[0][7] = 'black';
 
-    const score = evaluatePosition(board);
+    const score = evaluateStableDiscs(board);
     expect(score).toBeLessThan(0); // 黒有利=マイナス
   });
 
@@ -22,7 +22,7 @@ describe('evaluatePosition', () => {
     board[0][0] = 'white';
     board[0][7] = 'white';
 
-    const score = evaluatePosition(board);
+    const score = evaluateStableDiscs(board);
     expect(score).toBeGreaterThan(0); // 白有利=プラス
   });
 });

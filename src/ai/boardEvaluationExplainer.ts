@@ -1,6 +1,7 @@
 import { BOARD_SIZE } from '../game/constants';
 import { getAllValidMoves, getOpponent } from '../game/rules';
 import type { Board, Player, Position } from '../game/types';
+import { evaluateStableDiscs } from './evaluation';
 import { isCorner, isCSquare, isEdge, isXSquare } from './evaluationReasons';
 
 export interface MobilityAnalysis {
@@ -23,6 +24,10 @@ export interface StrongPositions {
   corners: Position[];
   edges: Position[];
   stableDiscs: Position[];
+  stableCount: {
+    player: number;
+    opponent: number;
+  };
 }
 
 export interface NextMoveStrength {
@@ -132,7 +137,39 @@ const analyzeStrongPositions = (board: Board, player: Player): StrongPositions =
     }
   }
 
-  return { corners, edges, stableDiscs };
+  // 確定石の評価値から実際の数を計算
+  const stableEval = evaluateStableDiscs(board);
+  const blackCount = board.flat().filter((cell) => cell === 'black').length;
+  const whiteCount = board.flat().filter((cell) => cell === 'white').length;
+
+  // 評価値から確定石の数を逆算（近似値）
+  const totalStableApprox = (Math.abs(stableEval) * (blackCount + whiteCount)) / 100;
+  const playerStableCount =
+    player === 'black'
+      ? stableEval < 0
+        ? Math.round((totalStableApprox * blackCount) / (blackCount + whiteCount))
+        : 0
+      : stableEval > 0
+        ? Math.round((totalStableApprox * whiteCount) / (blackCount + whiteCount))
+        : 0;
+  const opponentStableCount =
+    player === 'black'
+      ? stableEval > 0
+        ? Math.round((totalStableApprox * whiteCount) / (blackCount + whiteCount))
+        : 0
+      : stableEval < 0
+        ? Math.round((totalStableApprox * blackCount) / (blackCount + whiteCount))
+        : 0;
+
+  return {
+    corners,
+    edges,
+    stableDiscs,
+    stableCount: {
+      player: playerStableCount,
+      opponent: opponentStableCount,
+    },
+  };
 };
 
 // 角から連続している石は確定石
@@ -251,12 +288,12 @@ export const explainBoardEvaluation = (
     details.push(`✓ 角を${strongPositions.corners.length}つ確保（${cornerNotations}）`);
   }
 
-  if (
-    strongPositions.stableDiscs.length >= strongPositions.corners.length &&
-    strongPositions.stableDiscs.length > 0
-  ) {
-    const stableCount = strongPositions.stableDiscs.length;
-    details.push(`✓ 確定石が${stableCount}個あります`);
+  if (strongPositions.stableCount.player > 0) {
+    details.push(`✓ 確定石が約${strongPositions.stableCount.player}個あります`);
+  }
+
+  if (strongPositions.stableCount.opponent > strongPositions.stableCount.player) {
+    details.push(`× 相手の確定石（約${strongPositions.stableCount.opponent}個）の方が多い`);
   }
 
   // 次の一手の強さ
