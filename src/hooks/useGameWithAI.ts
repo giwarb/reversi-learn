@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ReversiAI } from '../ai/ai';
 import { globalBoardCache } from '../ai/cache/boardCache';
 import { globalValidMovesCache } from '../ai/cache/validMovesCache';
@@ -273,19 +273,21 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     [ai]
   );
 
-  // 深さ4の評価値を計算
+  // 深さ4の評価値を計算（メモ化）
+  const deepEvaluation = useMemo(() => {
+    // ゲーム終了時は計算しない
+    if (gameState.gameStatus !== 'playing') {
+      return 0;
+    }
+    // 絶対的な評価値を計算（マイナス=黒有利、プラス=白有利）
+    return minimax(gameState.board, gameState.currentPlayer, 4, -1000000, 1000000);
+  }, [gameState.board, gameState.currentPlayer, gameState.gameStatus]);
+
+  // 評価値の更新
   useEffect(() => {
-    // 非同期で深さ4の評価値を計算
-    const calculateDeepScores = async () => {
-      // 絶対的な評価値を計算（マイナス=黒有利、プラス=白有利）
-      const evaluation = minimax(gameState.board, gameState.currentPlayer, 4, -1000000, 1000000);
-
-      setDeepBlackScore(evaluation);
-      setDeepWhiteScore(evaluation);
-    };
-
-    calculateDeepScores();
-  }, [gameState.board, gameState.currentPlayer]);
+    setDeepBlackScore(deepEvaluation);
+    setDeepWhiteScore(deepEvaluation);
+  }, [deepEvaluation]);
 
   useEffect(() => {
     // パスの処理
