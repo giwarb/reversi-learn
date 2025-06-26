@@ -1,6 +1,9 @@
-import { BOARD_SIZE } from '../game/constants';
+import { getAdjacentCorner, isCorner, isCSquare, isEdge, isXSquare } from '../game/boardUtils';
 import { getAllValidMoves, getOpponent } from '../game/rules';
 import type { Board, Player, Position } from '../game/types';
+
+// Re-export for backward compatibility
+export { isCorner, isEdge, isXSquare, isCSquare, getAdjacentCorner };
 
 export interface EvaluationReason {
   type: string;
@@ -8,37 +11,6 @@ export interface EvaluationReason {
   impact: 'positive' | 'negative';
   value: number;
 }
-
-export const isCorner = (pos: Position): boolean => {
-  return (
-    (pos.row === 0 || pos.row === BOARD_SIZE - 1) && (pos.col === 0 || pos.col === BOARD_SIZE - 1)
-  );
-};
-
-export const isEdge = (pos: Position): boolean => {
-  return pos.row === 0 || pos.row === BOARD_SIZE - 1 || pos.col === 0 || pos.col === BOARD_SIZE - 1;
-};
-
-export const isXSquare = (pos: Position): boolean => {
-  return (
-    (pos.row === 1 || pos.row === BOARD_SIZE - 2) && (pos.col === 1 || pos.col === BOARD_SIZE - 2)
-  );
-};
-
-export const isCSquare = (pos: Position): boolean => {
-  const corners = [
-    { row: 0, col: 0 },
-    { row: 0, col: BOARD_SIZE - 1 },
-    { row: BOARD_SIZE - 1, col: 0 },
-    { row: BOARD_SIZE - 1, col: BOARD_SIZE - 1 },
-  ];
-
-  return corners.some((corner) => {
-    const diffRow = Math.abs(pos.row - corner.row);
-    const diffCol = Math.abs(pos.col - corner.col);
-    return (diffRow === 0 && diffCol === 1) || (diffRow === 1 && diffCol === 0);
-  });
-};
 
 export const analyzeMove = (
   board: Board,
@@ -111,12 +83,6 @@ export const analyzeMove = (
   }
 
   return reasons;
-};
-
-export const getAdjacentCorner = (pos: Position): Position => {
-  const row = pos.row <= 1 ? 0 : BOARD_SIZE - 1;
-  const col = pos.col <= 1 ? 0 : BOARD_SIZE - 1;
-  return { row, col };
 };
 
 export const explainEvaluation = (board: Board, position: Position, player: Player): string => {
