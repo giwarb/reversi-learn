@@ -1,14 +1,14 @@
 import { type FC, useState } from 'react';
 import type { Player } from '../../game/types';
 import { useGameWithAI } from '../../hooks/useGameWithAI';
+import { AILevelNotification } from './AILevelNotification';
 import { BadMoveDialog } from './BadMoveDialog';
 import { Board } from './Board';
 import { EvaluationDisplay } from './EvaluationDisplay';
 import { GameControls } from './GameControls';
 import { GameInfo } from './GameInfo';
-import { PlayerColorDialog } from './PlayerColorDialog';
 import { MoveRankingDisplay } from './MoveRankingDisplay';
-import { AILevelNotification } from './AILevelNotification';
+import { PlayerColorDialog } from './PlayerColorDialog';
 import './Game.css';
 
 export const Game: FC = () => {
@@ -25,7 +25,6 @@ export const Game: FC = () => {
     canUndo,
     playerColor,
     blackScore,
-    whiteScore,
     isPassTurn,
     useIterativeDeepening,
     setUseIterativeDeepening,
@@ -63,10 +62,10 @@ export const Game: FC = () => {
   // 最後の手を打つ前の盤面を取得
   const boardBeforeLastMove = (() => {
     if (gameState.fullMoveHistory.length === 0) return null;
-    
+
     // プレイヤーが最後に打った手を探す
     let playerMoveIndex = gameState.fullMoveHistory.length - 1;
-    
+
     // 最後のエントリがAIの手の場合、その前のプレイヤーの手を探す
     while (playerMoveIndex >= 0) {
       const entry = gameState.fullMoveHistory[playerMoveIndex];
@@ -75,7 +74,7 @@ export const Game: FC = () => {
       }
       playerMoveIndex--;
     }
-    
+
     return null;
   })();
 
@@ -138,7 +137,7 @@ export const Game: FC = () => {
           initialBoard={boardBeforeLastMove}
           playerMove={lastMoveAnalysis.playerMove}
           playerColor={playerColor}
-          aiDepth={aiLevel}
+          depth={4}
           onClose={() => {
             setShowAnalysis(false);
           }}

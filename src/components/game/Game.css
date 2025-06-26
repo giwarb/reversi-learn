@@ -31,12 +31,12 @@
     flex-direction: column;
     align-items: center;
   }
-  
+
   .game-left-section {
     width: 100%;
     max-width: 600px;
   }
-  
+
   .game-right-section {
     width: 100%;
     max-width: 600px;

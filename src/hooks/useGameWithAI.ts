@@ -101,7 +101,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
         setTimeout(async () => {
           setAIThinkingDepth(0);
           const startThinking = Date.now();
-          
+
           // Iterative Deepeningモードの場合、進捗を表示
           if (useIterativeDeepening) {
             // 非同期でAIの思考を実行し、進捗を更新
@@ -111,10 +111,10 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
               const estimatedDepth = Math.min(Math.floor(elapsed / 1000) + 1, aiLevel);
               setAIThinkingDepth(estimatedDepth);
             }, 100);
-            
+
             const aiMove = ai.getMove(newState.board, aiColor);
             clearInterval(checkProgress);
-            
+
             if (aiMove) {
               const aiNewState = playMove(newState, aiMove);
               if (aiNewState) {
@@ -135,7 +135,16 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
         }, 500);
       }
     },
-    [gameState, isAIThinking, playAgainstAI, ai, badMoveDetector, playerColor, useIterativeDeepening, aiLevel]
+    [
+      gameState,
+      isAIThinking,
+      playAgainstAI,
+      ai,
+      badMoveDetector,
+      playerColor,
+      useIterativeDeepening,
+      aiLevel,
+    ]
   );
 
   const resetGame = useCallback(() => {
@@ -269,18 +278,12 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     // 非同期で深さ4の評価値を計算
     const calculateDeepScores = async () => {
       // 絶対的な評価値を計算（マイナス=黒有利、プラス=白有利）
-      const evaluation = minimax(
-        gameState.board,
-        gameState.currentPlayer,
-        4,
-        -1000000,
-        1000000
-      );
-      
+      const evaluation = minimax(gameState.board, gameState.currentPlayer, 4, -1000000, 1000000);
+
       setDeepBlackScore(evaluation);
       setDeepWhiteScore(evaluation);
     };
-    
+
     calculateDeepScores();
   }, [gameState.board, gameState.currentPlayer]);
 

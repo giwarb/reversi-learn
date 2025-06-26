@@ -67,11 +67,11 @@ export class ValidMovesCache {
   getStats() {
     const total = this.hits + this.misses;
     const hitRate = total > 0 ? (this.hits / total) * 100 : 0;
-    
+
     return {
       hits: this.hits,
       misses: this.misses,
-      hitRate: hitRate.toFixed(2) + '%',
+      hitRate: `${hitRate.toFixed(2)}%`,
       size: this.cache.size,
       maxSize: this.maxSize,
     };

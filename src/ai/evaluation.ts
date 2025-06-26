@@ -38,8 +38,7 @@ export const evaluateMobility = (board: Board): number => {
 
   if (blackMoves.length + whiteMoves.length !== 0) {
     return (
-      (100 * (whiteMoves.length - blackMoves.length)) /
-      (blackMoves.length + whiteMoves.length)
+      (100 * (whiteMoves.length - blackMoves.length)) / (blackMoves.length + whiteMoves.length)
     );
   }
 
@@ -66,17 +65,11 @@ export const evaluateBoard = (board: Board): number => {
     return evaluatePosition(board) + evaluateMobility(board) * 2;
   } else if (totalPieces < 40) {
     // 中盤：バランスよく評価
-    return (
-      evaluatePosition(board) +
-      evaluateMobility(board) +
-      evaluatePieceCount(board) * 0.5
-    );
+    return evaluatePosition(board) + evaluateMobility(board) + evaluatePieceCount(board) * 0.5;
   } else {
     // 終盤：石の数を重視
     return (
-      evaluatePosition(board) * 0.5 +
-      evaluateMobility(board) * 0.5 +
-      evaluatePieceCount(board) * 2
+      evaluatePosition(board) * 0.5 + evaluateMobility(board) * 0.5 + evaluatePieceCount(board) * 2
     );
   }
 };

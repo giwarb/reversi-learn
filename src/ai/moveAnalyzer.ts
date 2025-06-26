@@ -1,4 +1,4 @@
-import { getAllValidMoves, makeMove, getOpponent } from '../game/rules';
+import { getAllValidMoves, getOpponent, makeMove } from '../game/rules';
 import type { Board, Player, Position } from '../game/types';
 import { analyzeMove } from './evaluationReasons';
 import { minimax } from './minimax';
@@ -20,7 +20,7 @@ export const analyzeBadMove = (
   board: Board,
   playerMove: Position,
   player: Player,
-  aiDepth: number
+  depth: number
 ): MoveAnalysis | null => {
   // プレイヤーの手の評価
   const validMoves = getAllValidMoves(board, player);
@@ -32,22 +32,16 @@ export const analyzeBadMove = (
     return null;
   }
 
-  // 各手の評価値を計算（深さ4の探索）
+  // 各手の評価値を計算
   const moveScores: MoveEvaluation[] = [];
   for (const move of validMoves) {
     const newBoard = makeMove(board, move, player);
     // 深さ4の探索で評価
-    const score = minimax(
-      newBoard,
-      getOpponent(player),
-      aiDepth - 1,
-      -1000000,
-      1000000
-    );
+    const score = minimax(newBoard, getOpponent(player), depth, -1000000, 1000000);
     moveScores.push({
       position: { row: move.row, col: move.col },
       score,
-      depth: aiDepth,
+      depth,
     });
   }
 
@@ -74,10 +68,11 @@ export const analyzeBadMove = (
   let playerRank = 1;
   for (const move of moveScores) {
     // プレイヤーによって比較条件を変える
-    const isBetter = player === 'black' 
-      ? move.score < playerScore.score  // 黒は小さい値が良い
-      : move.score > playerScore.score; // 白は大きい値が良い
-    
+    const isBetter =
+      player === 'black'
+        ? move.score < playerScore.score // 黒は小さい値が良い
+        : move.score > playerScore.score; // 白は大きい値が良い
+
     if (isBetter) {
       playerRank++;
     } else {

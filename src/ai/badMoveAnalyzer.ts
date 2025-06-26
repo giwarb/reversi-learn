@@ -272,14 +272,10 @@ export const analyzeDetailedBadMove = (
   board: Board,
   playerMove: Position,
   player: Player,
-  aiDepth: number,
-  aiEvaluation?: ReturnType<typeof findBestMove> // オプショナルパラメータとして受け取る
+  depth: number,
+  precomputedBestMove?: Position | null
 ): DetailedBadMoveAnalysis => {
-  // AIの最善手を取得（既に計算済みの場合は使い回す）
-  if (!aiEvaluation) {
-    aiEvaluation = findBestMove(board, player, aiDepth);
-  }
-  const bestMove = aiEvaluation ? aiEvaluation.position : null;
+  const bestMove = precomputedBestMove ?? findBestMove(board, player, depth + 1)?.position ?? null;
 
   // 評価値の差を計算
   const playerValidMove = getValidMove(board, playerMove, player);
@@ -347,7 +343,7 @@ export const analyzeDetailedBadMove = (
   // 相手の最善応手を計算
   const opponent: Player = player === 'black' ? 'white' : 'black';
   const newBoard = makeMove(board, playerValidMove, player);
-  const opponentBest = findBestMove(newBoard, opponent, aiDepth - 1);
+  const opponentBest = findBestMove(newBoard, opponent, depth - 1);
   const opponentBestResponse = opponentBest ? opponentBest.position : null;
 
   // 将来の影響を分析
@@ -381,7 +377,7 @@ export const analyzeDetailedBadMove = (
   let opponentBestResponseToRecommended: Position | null = null;
 
   if (bestMoveBoard && bestMove) {
-    const opponentBestResponseToBestMove = findBestMove(bestMoveBoard, opponent, aiDepth - 1);
+    const opponentBestResponseToBestMove = findBestMove(bestMoveBoard, opponent, depth - 1);
     if (opponentBestResponseToBestMove) {
       opponentBestResponseToRecommended = opponentBestResponseToBestMove.position;
       const opponentValidMoveToBestMove = getValidMove(

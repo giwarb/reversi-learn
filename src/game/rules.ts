@@ -62,9 +62,12 @@ export const getAllValidMoves = (board: Board, player: Player): ValidMove[] => {
   const cached = globalValidMovesCache.get(board, player);
   if (cached !== null) {
     // ValidMove型に変換して返す
-    return cached.map(pos => {
+    return cached.map((pos) => {
       const move = getValidMove(board, pos, player);
-      return move!; // キャッシュされた位置は必ず有効
+      if (!move) {
+        throw new Error('キャッシュされた位置が無効です');
+      }
+      return move;
     });
   }
 

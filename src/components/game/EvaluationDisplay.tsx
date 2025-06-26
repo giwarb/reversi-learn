@@ -1,7 +1,7 @@
 import { type FC, useState } from 'react';
+import { explainBoardEvaluation, getBriefExplanation } from '../../ai/boardEvaluationExplainer';
 import type { Board, Player } from '../../game/types';
 import { getAdvantageText, getNormalizedScores } from '../../utils/evaluationNormalizer';
-import { explainBoardEvaluation, getBriefExplanation } from '../../ai/boardEvaluationExplainer';
 import './EvaluationDisplay.css';
 
 interface EvaluationDisplayProps {
@@ -69,7 +69,7 @@ export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
           <span>AI</span>
         </div>
       </div>
-      
+
       <div className="evaluation-explanation-section">
         <button
           type="button"
@@ -78,7 +78,7 @@ export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
         >
           {showExplanation ? '▼' : '▶'} 盤面の詳細分析
         </button>
-        
+
         {showExplanation && (
           <div className="evaluation-explanation">
             <h4>【盤面の分析】</h4>

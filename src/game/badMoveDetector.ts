@@ -1,6 +1,5 @@
 import { ReversiAI } from '../ai/ai';
 import { analyzeDetailedBadMove, type DetailedBadMoveAnalysis } from '../ai/badMoveAnalyzer';
-import { findBestMove } from '../ai/minimax';
 import { analyzeBadMove, compareMovesWithAI } from '../ai/moveAnalyzer';
 import { getNormalizedScores } from '../utils/evaluationNormalizer';
 import type { Board, GameState, Player, Position } from './types';
@@ -33,12 +32,11 @@ export class BadMoveDetector {
     player: Player,
     playerColor: Player
   ): BadMoveResult {
-    // AIの推奨手を取得（一度だけ計算）
-    const aiEvaluation = findBestMove(boardBeforeMove, player, this.ai.getDepth());
-    const aiRecommendation = aiEvaluation ? aiEvaluation.position : null;
-
     // プレイヤーの手を分析
-    const analysis = analyzeBadMove(boardBeforeMove, playerMove, player, this.ai.getDepth());
+    const analysis = analyzeBadMove(boardBeforeMove, playerMove, player, 4);
+
+    // analysis.allMoves[0] contains the best move (AI recommendation)
+    const aiRecommendation = analysis?.allMoves?.[0]?.position ?? null;
 
     if (!analysis) {
       return {
@@ -53,13 +51,13 @@ export class BadMoveDetector {
     // 悪手かどうかを判定（順位ベース）
     const isBadMove = analysis.isBadMove;
 
-    // 詳細な分析を実行（aiEvaluationを渡して重複計算を避ける）
+    // 詳細な分析を実行（precomputed best moveを渡して重複計算を避ける）
     const detailedAnalysis = analyzeDetailedBadMove(
       boardBeforeMove,
       playerMove,
       player,
-      this.ai.getDepth(),
-      aiEvaluation // 既に計算済みの結果を渡す
+      4,
+      aiRecommendation
     );
 
     // 説明文を生成
@@ -130,12 +128,17 @@ export class BadMoveDetector {
 
           // あなたの手の評価値（正規化）
           const playerMoveScores = getNormalizedScores(detailedAnalysis.evaluationAfterPlayerMove);
-          const afterOpponentScores = getNormalizedScores(detailedAnalysis.evaluationAfterOpponentResponse);
+          const afterOpponentScores = getNormalizedScores(
+            detailedAnalysis.evaluationAfterOpponentResponse
+          );
 
           // 推奨手の評価値（正規化）
-          const bestMoveInitialScore = detailedAnalysis.evaluationAfterPlayerMove + detailedAnalysis.scoreDifference;
+          const bestMoveInitialScore =
+            detailedAnalysis.evaluationAfterPlayerMove + detailedAnalysis.scoreDifference;
           const bestMoveScores = getNormalizedScores(bestMoveInitialScore);
-          const bestMoveAfterScores = getNormalizedScores(detailedAnalysis.bestMoveEvaluationAfterOpponent);
+          const bestMoveAfterScores = getNormalizedScores(
+            detailedAnalysis.bestMoveEvaluationAfterOpponent
+          );
 
           const playerScore =
             playerColor === 'black' ? playerMoveScores.blackScore : playerMoveScores.whiteScore;

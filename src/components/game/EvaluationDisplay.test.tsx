@@ -5,12 +5,7 @@ import { EvaluationDisplay } from './EvaluationDisplay';
 describe('EvaluationDisplay', () => {
   it('黒と白の評価値を表示する', () => {
     render(
-      <EvaluationDisplay
-        board={[]}
-        evaluation={20}
-        currentPlayer="black"
-        playerColor="black"
-      />
+      <EvaluationDisplay board={[]} evaluation={20} currentPlayer="black" playerColor="black" />
     );
 
     // 正規化されたスコア（黒有利の場合）
@@ -21,34 +16,19 @@ describe('EvaluationDisplay', () => {
 
   it('評価値の差に応じて適切な優劣テキストを表示', () => {
     const { rerender } = render(
-      <EvaluationDisplay
-        board={[]}
-        evaluation={0}
-        currentPlayer="black"
-        playerColor="black"
-      />
+      <EvaluationDisplay board={[]} evaluation={0} currentPlayer="black" playerColor="black" />
     );
 
     expect(screen.getByText('互角')).toBeInTheDocument();
 
     rerender(
-      <EvaluationDisplay
-        board={[]}
-        evaluation={30}
-        currentPlayer="black"
-        playerColor="black"
-      />
+      <EvaluationDisplay board={[]} evaluation={30} currentPlayer="black" playerColor="black" />
     );
 
     expect(screen.getByText('白やや有利')).toBeInTheDocument();
 
     rerender(
-      <EvaluationDisplay
-        board={[]}
-        evaluation={-80}
-        currentPlayer="black"
-        playerColor="black"
-      />
+      <EvaluationDisplay board={[]} evaluation={-80} currentPlayer="black" playerColor="black" />
     );
 
     expect(screen.getByText('黒優勢')).toBeInTheDocument();
@@ -56,17 +36,12 @@ describe('EvaluationDisplay', () => {
 
   it('プレイヤーとAIのスコアを正しく表示', () => {
     render(
-      <EvaluationDisplay
-        board={[]}
-        evaluation={20}
-        currentPlayer="white"
-        playerColor="white"
-      />
+      <EvaluationDisplay board={[]} evaluation={20} currentPlayer="white" playerColor="white" />
     );
 
     const playerElements = screen.getAllByText('あなた');
     const aiElements = screen.getAllByText('AI');
-    
+
     const playerScore = playerElements[0].parentElement;
     const aiScore = aiElements[0].parentElement;
 
@@ -76,12 +51,7 @@ describe('EvaluationDisplay', () => {
 
   it('現在のプレイヤーをアクティブ表示', () => {
     render(
-      <EvaluationDisplay
-        board={[]}
-        evaluation={20}
-        currentPlayer="black"
-        playerColor="black"
-      />
+      <EvaluationDisplay board={[]} evaluation={20} currentPlayer="black" playerColor="black" />
     );
 
     const playerElements = screen.getAllByText('あなた');
@@ -91,12 +61,7 @@ describe('EvaluationDisplay', () => {
 
   it('ヘルプボタンが存在する', () => {
     render(
-      <EvaluationDisplay
-        board={[]}
-        evaluation={20}
-        currentPlayer="black"
-        playerColor="black"
-      />
+      <EvaluationDisplay board={[]} evaluation={20} currentPlayer="black" playerColor="black" />
     );
 
     const helpButton = screen.getByRole('button', { name: '?' });

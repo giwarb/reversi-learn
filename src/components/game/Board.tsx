@@ -50,6 +50,7 @@ export const Board: FC<BoardProps> = ({
           {board.map((row, rowIndex) =>
             row.map((cell, colIndex) => (
               <button
+                // biome-ignore lint/suspicious/noArrayIndexKey: 固定サイズ(8x8)のゲームボードで行と列の順序は不変
                 key={`${rowIndex}-${colIndex}`}
                 type="button"
                 className={`cell ${isValidMove(rowIndex, colIndex) ? 'valid-move' : ''} ${

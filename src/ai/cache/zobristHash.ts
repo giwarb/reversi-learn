@@ -14,11 +14,19 @@ class ZobristTable {
     // 8x8の盤面に対して各色のランダム値を生成
     this.blackTable = Array(8)
       .fill(null)
-      .map(() => Array(8).fill(null).map(() => this.randomBigInt(random)));
-    
+      .map(() =>
+        Array(8)
+          .fill(null)
+          .map(() => this.randomBigInt(random))
+      );
+
     this.whiteTable = Array(8)
       .fill(null)
-      .map(() => Array(8).fill(null).map(() => this.randomBigInt(random)));
+      .map(() =>
+        Array(8)
+          .fill(null)
+          .map(() => this.randomBigInt(random))
+      );
 
     // 手番用のランダム値
     this.blackToMove = this.randomBigInt(random);

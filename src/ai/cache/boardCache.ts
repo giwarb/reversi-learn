@@ -1,4 +1,4 @@
-import type { Board, Position, Player } from '../../game/types';
+import type { Board, Player, Position } from '../../game/types';
 import { computeBoardHash } from './zobristHash';
 
 interface CacheEntry {
@@ -26,7 +26,7 @@ export class BoardCache {
   /**
    * キャッシュから評価値を取得
    */
-  get(board: Board, depth: number, player: Player, isMaximizing: boolean): CacheEntry | null {
+  get(board: Board, depth: number, player: Player, _isMaximizing: boolean): CacheEntry | null {
     const boardHash = computeBoardHash(board);
     const key = `${boardHash}_${player}_${depth}`;
     const entry = this.cache.get(key);
@@ -48,10 +48,17 @@ export class BoardCache {
   /**
    * キャッシュに評価値を保存
    */
-  set(board: Board, evaluation: number, bestMove: Position | null, depth: number, player: Player, isMaximizing: boolean): void {
+  set(
+    board: Board,
+    evaluation: number,
+    bestMove: Position | null,
+    depth: number,
+    player: Player,
+    _isMaximizing: boolean
+  ): void {
     const boardHash = computeBoardHash(board);
     const key = `${boardHash}_${player}_${depth}`;
-    
+
     // キャッシュサイズ制限に達した場合、最も古いエントリを削除
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
@@ -83,11 +90,11 @@ export class BoardCache {
   getStats() {
     const total = this.hits + this.misses;
     const hitRate = total > 0 ? (this.hits / total) * 100 : 0;
-    
+
     return {
       hits: this.hits,
       misses: this.misses,
-      hitRate: hitRate.toFixed(2) + '%',
+      hitRate: `${hitRate.toFixed(2)}%`,
       size: this.cache.size,
       maxSize: this.maxSize,
     };

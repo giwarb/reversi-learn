@@ -1,7 +1,7 @@
-import type { Board, Player, Position } from '../game/types';
-import { getAllValidMoves, getOpponent } from '../game/rules';
-import { isCorner, isXSquare, isCSquare, isEdge } from './evaluationReasons';
 import { BOARD_SIZE } from '../game/constants';
+import { getAllValidMoves, getOpponent } from '../game/rules';
+import type { Board, Player, Position } from '../game/types';
+import { isCorner, isCSquare, isEdge, isXSquare } from './evaluationReasons';
 
 export interface MobilityAnalysis {
   playerMoves: number;
@@ -58,7 +58,7 @@ const positionsToNotation = (positions: Position[]): string => {
 const analyzeMobility = (board: Board, player: Player): MobilityAnalysis => {
   const playerMoves = getAllValidMoves(board, player);
   const opponentMoves = getAllValidMoves(board, getOpponent(player));
-  
+
   let advantage: 'player' | 'opponent' | 'even';
   if (playerMoves.length > opponentMoves.length + 2) {
     advantage = 'player';
@@ -67,7 +67,7 @@ const analyzeMobility = (board: Board, player: Player): MobilityAnalysis => {
   } else {
     advantage = 'even';
   }
-  
+
   return {
     playerMoves: playerMoves.length,
     opponentMoves: opponentMoves.length,
@@ -80,13 +80,13 @@ const analyzeMobility = (board: Board, player: Player): MobilityAnalysis => {
 // 相手の手の制限を分析
 const analyzeOpponentRestriction = (board: Board, player: Player): OpponentRestriction => {
   const opponentMoves = getAllValidMoves(board, getOpponent(player));
-  const xSquares = opponentMoves.filter(move => isXSquare(move));
-  const cSquares = opponentMoves.filter(move => isCSquare(move));
-  
+  const xSquares = opponentMoves.filter((move) => isXSquare(move));
+  const cSquares = opponentMoves.filter((move) => isCSquare(move));
+
   const dangerousMoves = [...xSquares, ...cSquares];
   const isRestricted = opponentMoves.length <= 4;
   const restrictedToXC = dangerousMoves.length === opponentMoves.length && opponentMoves.length > 0;
-  
+
   return {
     isRestricted,
     restrictedToXC,
@@ -101,7 +101,7 @@ const analyzeStrongPositions = (board: Board, player: Player): StrongPositions =
   const corners: Position[] = [];
   const edges: Position[] = [];
   const stableDiscs: Position[] = [];
-  
+
   // 角の確認
   const cornerPositions = [
     { row: 0, col: 0 },
@@ -109,21 +109,21 @@ const analyzeStrongPositions = (board: Board, player: Player): StrongPositions =
     { row: BOARD_SIZE - 1, col: 0 },
     { row: BOARD_SIZE - 1, col: BOARD_SIZE - 1 },
   ];
-  
+
   for (const pos of cornerPositions) {
     if (board[pos.row][pos.col] === player) {
       corners.push(pos);
       stableDiscs.push(pos); // 角は常に確定石
     }
   }
-  
+
   // 辺の確認（角とC squareを除く）
   for (let row = 0; row < BOARD_SIZE; row++) {
     for (let col = 0; col < BOARD_SIZE; col++) {
       const pos = { row, col };
       if (board[row][col] === player && isEdge(pos) && !isCorner(pos) && !isCSquare(pos)) {
         edges.push(pos);
-        
+
         // 隣接する角が自分の石なら確定石
         if (isStableFromCorner(board, pos, player)) {
           stableDiscs.push(pos);
@@ -131,7 +131,7 @@ const analyzeStrongPositions = (board: Board, player: Player): StrongPositions =
       }
     }
   }
-  
+
   return { corners, edges, stableDiscs };
 };
 
@@ -144,7 +144,7 @@ const isStableFromCorner = (board: Board, pos: Position, player: Player): boolea
     { row: BOARD_SIZE - 1, col: 0 },
     { row: BOARD_SIZE - 1, col: BOARD_SIZE - 1 },
   ];
-  
+
   for (const corner of corners) {
     if (board[corner.row][corner.col] === player) {
       // 同じ行または列で角から連続しているか確認
@@ -160,7 +160,7 @@ const isStableFromCorner = (board: Board, pos: Position, player: Player): boolea
         }
         if (continuous) return true;
       }
-      
+
       if (corner.col === pos.col) {
         const start = Math.min(corner.row, pos.row);
         const end = Math.max(corner.row, pos.row);
@@ -175,7 +175,7 @@ const isStableFromCorner = (board: Board, pos: Position, player: Player): boolea
       }
     }
   }
-  
+
   return false;
 };
 
@@ -184,7 +184,7 @@ const analyzeNextMoveStrength = (board: Board, player: Player): NextMoveStrength
   const validMoves = getAllValidMoves(board, player);
   const cornerPositions: Position[] = [];
   const edgePositions: Position[] = [];
-  
+
   // 角が取れるかチェック
   for (const move of validMoves) {
     if (isCorner(move)) {
@@ -193,7 +193,7 @@ const analyzeNextMoveStrength = (board: Board, player: Player): NextMoveStrength
       edgePositions.push(move);
     }
   }
-  
+
   // 相手の手を大きく制限できるかチェック
   let canSeverelyLimitOpponent = false;
   for (const move of validMoves) {
@@ -206,7 +206,7 @@ const analyzeNextMoveStrength = (board: Board, player: Player): NextMoveStrength
       break;
     }
   }
-  
+
   return {
     canTakeCorner: cornerPositions.length > 0,
     cornerPositions,
@@ -217,14 +217,17 @@ const analyzeNextMoveStrength = (board: Board, player: Player): NextMoveStrength
 };
 
 // 盤面全体の評価を説明
-export const explainBoardEvaluation = (board: Board, player: Player): BoardEvaluationExplanation => {
+export const explainBoardEvaluation = (
+  board: Board,
+  player: Player
+): BoardEvaluationExplanation => {
   const mobility = analyzeMobility(board, player);
   const opponentRestriction = analyzeOpponentRestriction(board, player);
   const strongPositions = analyzeStrongPositions(board, player);
   const nextMoveStrength = analyzeNextMoveStrength(board, player);
-  
+
   const details: string[] = [];
-  
+
   // 機動力の説明
   if (mobility.advantage === 'player') {
     details.push(`✓ 着手可能数で優位（${mobility.playerMoves}手 vs ${mobility.opponentMoves}手）`);
@@ -233,7 +236,7 @@ export const explainBoardEvaluation = (board: Board, player: Player): BoardEvalu
   } else {
     details.push(`- 着手可能数は互角（${mobility.playerMoves}手 vs ${mobility.opponentMoves}手）`);
   }
-  
+
   // 相手の手の制限
   if (opponentRestriction.restrictedToXC) {
     const positions = positionsToNotation(opponentRestriction.positions);
@@ -241,33 +244,36 @@ export const explainBoardEvaluation = (board: Board, player: Player): BoardEvalu
   } else if (opponentRestriction.isRestricted) {
     details.push(`✓ 相手の手が少ない（${opponentRestriction.positions.length}手のみ）`);
   }
-  
+
   // 強い位置の占有
   if (strongPositions.corners.length > 0) {
     const cornerNotations = positionsToNotation(strongPositions.corners);
     details.push(`✓ 角を${strongPositions.corners.length}つ確保（${cornerNotations}）`);
   }
-  
-  if (strongPositions.stableDiscs.length >= strongPositions.corners.length && strongPositions.stableDiscs.length > 0) {
+
+  if (
+    strongPositions.stableDiscs.length >= strongPositions.corners.length &&
+    strongPositions.stableDiscs.length > 0
+  ) {
     const stableCount = strongPositions.stableDiscs.length;
     details.push(`✓ 確定石が${stableCount}個あります`);
   }
-  
+
   // 次の一手の強さ
   if (nextMoveStrength.canTakeCorner) {
     const cornerNotations = positionsToNotation(nextMoveStrength.cornerPositions);
     details.push(`✓ 次の手で角が取れます（${cornerNotations}）`);
   }
-  
+
   if (nextMoveStrength.canSeverelyLimitOpponent) {
     details.push(`✓ 次の手で相手の手を大きく制限できます`);
   }
-  
+
   // 総合評価
   let overallAssessment = '';
-  const positiveCount = details.filter(d => d.startsWith('✓')).length;
-  const negativeCount = details.filter(d => d.startsWith('×')).length;
-  
+  const positiveCount = details.filter((d) => d.startsWith('✓')).length;
+  const negativeCount = details.filter((d) => d.startsWith('×')).length;
+
   if (positiveCount >= 3 && negativeCount === 0) {
     overallAssessment = '非常に有利な局面です';
   } else if (positiveCount > negativeCount && positiveCount > 0) {
@@ -277,7 +283,7 @@ export const explainBoardEvaluation = (board: Board, player: Player): BoardEvalu
   } else {
     overallAssessment = '互角の局面です';
   }
-  
+
   return {
     mobility,
     opponentRestriction,

@@ -18,7 +18,7 @@ export const MoveRankingDisplay: FC<MoveRankingDisplayProps> = ({
   const { rank, totalMoves, percentile } = lastMoveAnalysis;
   const isBestMove = rank === 1;
   const isBadMove = percentile && percentile < 20;
-  
+
   const getRankingClass = () => {
     if (isBestMove) return 'best-move';
     if (isBadMove) return 'bad-move';
