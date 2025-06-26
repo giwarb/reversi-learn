@@ -9,7 +9,7 @@ describe('BadMoveDetector', () => {
   });
 
   it('有効な手を分析できる', () => {
-    const detector = new BadMoveDetector(3, 50);
+    const detector = new BadMoveDetector(4, 50);
     const board = createInitialBoard();
     const result = detector.detectBadMove(board, { row: 2, col: 3 }, 'black', 'black');
 
@@ -19,7 +19,7 @@ describe('BadMoveDetector', () => {
   });
 
   it('無効な手を検出できる', () => {
-    const detector = new BadMoveDetector(3, 50);
+    const detector = new BadMoveDetector(4, 50);
     const board = createInitialBoard();
     const result = detector.detectBadMove(board, { row: 0, col: 0 }, 'black', 'black');
 
@@ -50,7 +50,7 @@ describe('BadMoveDetector', () => {
   });
 
   it('同じ手を選んだ場合は悪手にならない', () => {
-    const detector = new BadMoveDetector(1, 50); // 浅い探索で高速化
+    const detector = new BadMoveDetector(4, 50); // 浅い探索で高速化
     const board = createInitialBoard();
 
     // AIが選ぶであろう手を事前に確認

@@ -73,7 +73,12 @@ export const analyzeBadMove = (
   // 同率を考慮した順位を計算
   let playerRank = 1;
   for (const move of moveScores) {
-    if (move.score > playerScore.score) {
+    // プレイヤーによって比較条件を変える
+    const isBetter = player === 'black' 
+      ? move.score < playerScore.score  // 黒は小さい値が良い
+      : move.score > playerScore.score; // 白は大きい値が良い
+    
+    if (isBetter) {
       playerRank++;
     } else {
       break;

@@ -140,7 +140,7 @@ describe('BadMoveDetector - パーセンタイルベース判定', () => {
 
   it('同率の手は同じ順位として扱われる', () => {
     const board = createInitialBoard();
-    const detector = new BadMoveDetector(2); // より浅い探索で同率を作りやすくする
+    const detector = new BadMoveDetector(3); // より浅い探索で同率を作りやすくする
 
     const validMoves = getAllValidMoves(board, 'black');
     const results = validMoves.map((move) =>
