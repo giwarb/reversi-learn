@@ -1,8 +1,15 @@
+import {
+  copyBoard,
+  getAllCorners,
+  isCorner,
+  isCSquare,
+  isEdge,
+  isXSquare,
+} from '../game/boardUtils';
 import { BOARD_SIZE } from '../game/constants';
 import { getAllValidMoves, getOpponent } from '../game/rules';
 import type { Board, Player, Position } from '../game/types';
 import { evaluateStableDiscs } from './evaluation';
-import { isCorner, isCSquare, isEdge, isXSquare } from './evaluationReasons';
 
 export interface MobilityAnalysis {
   playerMoves: number;
@@ -108,12 +115,7 @@ const analyzeStrongPositions = (board: Board, player: Player): StrongPositions =
   const stableDiscs: Position[] = [];
 
   // 角の確認
-  const cornerPositions = [
-    { row: 0, col: 0 },
-    { row: 0, col: BOARD_SIZE - 1 },
-    { row: BOARD_SIZE - 1, col: 0 },
-    { row: BOARD_SIZE - 1, col: BOARD_SIZE - 1 },
-  ];
+  const cornerPositions = getAllCorners();
 
   for (const pos of cornerPositions) {
     if (board[pos.row][pos.col] === player) {
@@ -175,12 +177,7 @@ const analyzeStrongPositions = (board: Board, player: Player): StrongPositions =
 // 角から連続している石は確定石
 const isStableFromCorner = (board: Board, pos: Position, player: Player): boolean => {
   // 簡略化された確定石判定（角から連続している辺の石）
-  const corners = [
-    { row: 0, col: 0 },
-    { row: 0, col: BOARD_SIZE - 1 },
-    { row: BOARD_SIZE - 1, col: 0 },
-    { row: BOARD_SIZE - 1, col: BOARD_SIZE - 1 },
-  ];
+  const corners = getAllCorners();
 
   for (const corner of corners) {
     if (board[corner.row][corner.col] === player) {
@@ -234,7 +231,7 @@ const analyzeNextMoveStrength = (board: Board, player: Player): NextMoveStrength
   // 相手の手を大きく制限できるかチェック
   let canSeverelyLimitOpponent = false;
   for (const move of validMoves) {
-    const testBoard = JSON.parse(JSON.stringify(board)) as Board;
+    const testBoard = copyBoard(board);
     // 仮に打ってみる
     testBoard[move.row][move.col] = player;
     const opponentMovesAfter = getAllValidMoves(testBoard, getOpponent(player));

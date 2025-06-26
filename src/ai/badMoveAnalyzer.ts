@@ -1,3 +1,4 @@
+import { getAdjacentToCorner, getAllCorners, isCorner } from '../game/boardUtils';
 import { getAllValidMoves, getValidMove, makeMove } from '../game/rules';
 import type { Board, Player, Position } from '../game/types';
 import { evaluateBoard } from './evaluation';
@@ -31,43 +32,12 @@ export interface DetailedBadMoveAnalysis {
   bestMoveEvaluationChange: number;
 }
 
-const isCorner = (pos: Position): boolean => {
-  return (pos.row === 0 || pos.row === 7) && (pos.col === 0 || pos.col === 7);
-};
-
-// const _isEdge = (pos: Position): boolean => {
-//   return pos.row === 0 || pos.row === 7 || pos.col === 0 || pos.col === 7;
-// };
-
-const getAdjacentToCorner = (corner: Position): Position[] => {
-  const adjacent: Position[] = [];
-  const { row, col } = corner;
-
-  // 角の隣接マス（X-square と C-square）
-  if (row === 0 && col === 0) {
-    adjacent.push({ row: 0, col: 1 }, { row: 1, col: 0 }, { row: 1, col: 1 });
-  } else if (row === 0 && col === 7) {
-    adjacent.push({ row: 0, col: 6 }, { row: 1, col: 7 }, { row: 1, col: 6 });
-  } else if (row === 7 && col === 0) {
-    adjacent.push({ row: 7, col: 1 }, { row: 6, col: 0 }, { row: 6, col: 1 });
-  } else if (row === 7 && col === 7) {
-    adjacent.push({ row: 7, col: 6 }, { row: 6, col: 7 }, { row: 6, col: 6 });
-  }
-
-  return adjacent;
-};
-
 const analyzeCornerVulnerability = (
   board: Board,
   move: Position,
   player: Player
 ): BadMoveImpact | null => {
-  const corners: Position[] = [
-    { row: 0, col: 0 },
-    { row: 0, col: 7 },
-    { row: 7, col: 0 },
-    { row: 7, col: 7 },
-  ];
+  const corners = getAllCorners();
 
   for (const corner of corners) {
     // 角が空いている場合
