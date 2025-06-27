@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { BadMoveResult } from '../game/badMoveDetector';
 import type { GameState, Player, Position } from '../game/types';
 import { useAIPlayer } from './useAIPlayer';
@@ -38,6 +38,9 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   const evaluation = useEvaluation(aiPlayer.aiLevel);
   const gameHistory = useGameHistory(gameState.playerColor);
 
+  // AI移動を追跡するためのref
+  const lastAIMoveRef = useRef<string>('');
+
   // ゲーム履歴を更新
   useEffect(() => {
     gameHistory.updateFromGameState(gameState.gameState);
@@ -54,15 +57,18 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
 
       const boardBeforeMove = gameState.gameState.board;
       const currentPlayerBeforeMove = gameState.gameState.currentPlayer;
-      const success = gameState.makeMove(position);
 
-      if (!success) return;
-
-      // 悪手検出（人間のプレイヤーの手のみ）
+      // 悪手検出（人間のプレイヤーの手のみ）- 手を打つ前にチェック
       if (currentPlayerBeforeMove === gameState.playerColor) {
         // 手を打つ前の評価値を保存
         evaluation.setBeforeMoveScores(evaluation.blackScore, evaluation.whiteScore);
+      }
 
+      const success = gameState.makeMove(position);
+      if (!success) return;
+
+      // 悪手検出の実行 - 手を打った後に実行
+      if (currentPlayerBeforeMove === gameState.playerColor) {
         evaluation.analyzeBadMove(
           boardBeforeMove,
           position,
@@ -70,21 +76,8 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
           gameState.playerColor
         );
       }
-
-      // AIの手番
-      const aiColor = gameState.playerColor === 'black' ? 'white' : 'black';
-      if (
-        playAgainstAI &&
-        gameState.gameState.currentPlayer === aiColor &&
-        !gameState.gameState.gameOver
-      ) {
-        const aiMove = await aiPlayer.requestAIMove(gameState.gameState.board, aiColor);
-        if (aiMove) {
-          gameState.makeMove(aiMove);
-        }
-      }
     },
-    [gameState, aiPlayer, evaluation, playAgainstAI]
+    [gameState, aiPlayer, evaluation]
   );
 
   const resetGame = useCallback(() => {
@@ -118,6 +111,16 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     gameState.undoLastMove();
     evaluation.clearLastMoveAnalysis();
 
+    // 一手戻った後、lastAIMoveRefをリセットして新しいAI移動を可能にする
+    // 初期状態に戻った場合は空文字列に、そうでない場合は無効な値にリセット
+    if (gameState.gameState.moveHistory.length === 0) {
+      lastAIMoveRef.current = '';
+    } else {
+      // 一手戻った状態ではAIが未実行なので、必ず新しいAI移動をトリガーするために
+      // 現在の状態とは異なる値にリセット
+      lastAIMoveRef.current = 'undo-reset';
+    }
+
     // プレイヤーが白で、最初の状態に戻った場合、AIに最初の手を打たせる
     if (gameState.playerColor === 'white' && gameState.gameState.moveHistory.length === 0) {
       const aiMove = await aiPlayer.requestAIMove(gameState.gameState.board, 'black');
@@ -148,6 +151,34 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     },
     [aiPlayer]
   );
+
+  // AIの手番処理
+  useEffect(() => {
+    if (!playAgainstAI || aiPlayer.isAIThinking || gameState.gameState.gameOver) return;
+
+    const aiColor = gameState.playerColor === 'black' ? 'white' : 'black';
+    const isAITurn = gameState.gameState.currentPlayer === aiColor;
+
+    // 現在の状態を文字列化してユニークキーとして使用
+    const currentStateKey = `${gameState.gameState.currentPlayer}-${gameState.gameState.moveHistory.length}`;
+
+    if (isAITurn && currentStateKey !== lastAIMoveRef.current) {
+      lastAIMoveRef.current = currentStateKey; // AI移動を開始する前にマーク
+
+      setTimeout(async () => {
+        const aiMove = await aiPlayer.requestAIMove(gameState.gameState.board, aiColor);
+        if (aiMove) {
+          gameState.makeMove(aiMove);
+        }
+      }, 0);
+    }
+  }, [
+    gameState.gameState.currentPlayer,
+    gameState.gameState.gameOver,
+    playAgainstAI,
+    aiPlayer,
+    gameState,
+  ]);
 
   // パスの処理
   useEffect(() => {
