@@ -93,17 +93,19 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   }, [gameState, evaluation, gameHistory]);
 
   const resetGameWithColor = useCallback(
-    async (newPlayerColor: Player) => {
+    (newPlayerColor: Player) => {
       gameState.resetGameWithColor(newPlayerColor);
       evaluation.clearLastMoveAnalysis();
       gameHistory.reset();
 
-      // 後手（白）を選んだ場合、AIに最初の一手を打たせる
+      // 後手（白）を選んだ場合、AIに最初の一手を打たせる（非同期実行）
       if (playAgainstAI && newPlayerColor === 'white') {
-        const aiMove = await aiPlayer.requestAIMove(gameState.gameState.board, 'black');
-        if (aiMove) {
-          gameState.makeMove(aiMove);
-        }
+        setTimeout(async () => {
+          const aiMove = await aiPlayer.requestAIMove(gameState.gameState.board, 'black');
+          if (aiMove) {
+            gameState.makeMove(aiMove);
+          }
+        }, 0);
       }
     },
     [playAgainstAI, gameState, evaluation, gameHistory, aiPlayer]
