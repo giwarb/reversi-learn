@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { useGameWithAI } from './useGameWithAI';
 
 describe('useGameWithAI - 先手・後手選択', () => {
@@ -15,11 +15,11 @@ describe('useGameWithAI - 先手・後手選択', () => {
     await act(async () => {
       result.current.resetGameWithColor('white');
       // AI処理を待つ
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
     });
 
     expect(result.current.playerColor).toBe('white');
-    
+
     // AIが実際に手を打ったかどうかで状態を確認
     if (result.current.gameState.moveHistory.length > 0) {
       // AIが手を打っていれば、プレイヤー（白）の手番
