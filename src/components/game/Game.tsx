@@ -116,6 +116,7 @@ export const Game: FC = () => {
             evaluation={rawEvaluation}
             currentPlayer={gameState.currentPlayer}
             playerColor={playerColor}
+            searchDepth={aiLevel}
           />
           {lastMoveAnalysis && (
             <MoveRankingDisplay

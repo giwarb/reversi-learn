@@ -10,6 +10,11 @@ import { BOARD_SIZE } from '../game/constants';
 import { getAllValidMoves, getOpponent } from '../game/rules';
 import type { Board, Player, Position } from '../game/types';
 import { evaluateStableDiscs } from './evaluation';
+import {
+  generateEvaluationExplanation,
+  performUnifiedEvaluation,
+  type UnifiedEvaluation,
+} from './unifiedEvaluation';
 
 export interface MobilityAnalysis {
   playerMoves: number;
@@ -52,6 +57,7 @@ export interface BoardEvaluationExplanation {
   nextMoveStrength: NextMoveStrength;
   overallAssessment: string;
   details: string[];
+  unifiedEvaluation?: UnifiedEvaluation;
 }
 
 // マスの座標を棋譜形式（例：a1, h8）に変換
@@ -253,67 +259,56 @@ const analyzeNextMoveStrength = (board: Board, player: Player): NextMoveStrength
 // 盤面全体の評価を説明
 export const explainBoardEvaluation = (
   board: Board,
-  player: Player
+  player: Player,
+  searchDepth?: number
 ): BoardEvaluationExplanation => {
+  // 統合評価システムを使用
+  const unifiedEvaluation = performUnifiedEvaluation(board, player, searchDepth);
+
+  // 統合評価からの説明生成
+  const unifiedDetails = generateEvaluationExplanation(unifiedEvaluation, player);
+
+  // 従来の詳細分析も併用
   const mobility = analyzeMobility(board, player);
   const opponentRestriction = analyzeOpponentRestriction(board, player);
   const strongPositions = analyzeStrongPositions(board, player);
   const nextMoveStrength = analyzeNextMoveStrength(board, player);
 
-  const details: string[] = [];
+  const legacyDetails: string[] = [];
 
-  // 機動力の説明
-  if (mobility.advantage === 'player') {
-    details.push(`✓ 着手可能数で優位（${mobility.playerMoves}手 vs ${mobility.opponentMoves}手）`);
-  } else if (mobility.advantage === 'opponent') {
-    details.push(`× 着手可能数で劣勢（${mobility.playerMoves}手 vs ${mobility.opponentMoves}手）`);
-  } else {
-    details.push(`- 着手可能数は互角（${mobility.playerMoves}手 vs ${mobility.opponentMoves}手）`);
-  }
-
-  // 相手の手の制限
+  // 相手の手の制限（統合評価では捉えにくい部分）
   if (opponentRestriction.restrictedToXC) {
     const positions = positionsToNotation(opponentRestriction.positions);
-    details.push(`✓ 相手の手がX・Cマスに制限されています（${positions}）`);
+    legacyDetails.push(`⚠️ 相手の手がX・Cマスに制限されています（${positions}）`);
   } else if (opponentRestriction.isRestricted) {
-    details.push(`✓ 相手の手が少ない（${opponentRestriction.positions.length}手のみ）`);
+    legacyDetails.push(`⚠️ 相手の手が少ない（${opponentRestriction.positions.length}手のみ）`);
   }
 
-  // 強い位置の占有
-  if (strongPositions.corners.length > 0) {
-    const cornerNotations = positionsToNotation(strongPositions.corners);
-    details.push(`✓ 角を${strongPositions.corners.length}つ確保（${cornerNotations}）`);
-  }
-
-  if (strongPositions.stableCount.player > 0) {
-    details.push(`✓ 確定石が約${strongPositions.stableCount.player}個あります`);
-  }
-
-  if (strongPositions.stableCount.opponent > strongPositions.stableCount.player) {
-    details.push(`× 相手の確定石（約${strongPositions.stableCount.opponent}個）の方が多い`);
-  }
-
-  // 次の一手の強さ
+  // 次の一手の強さ（戦術的要素）
   if (nextMoveStrength.canTakeCorner) {
     const cornerNotations = positionsToNotation(nextMoveStrength.cornerPositions);
-    details.push(`✓ 次の手で角が取れます（${cornerNotations}）`);
+    legacyDetails.push(`🎯 次の手で角が取れます（${cornerNotations}）`);
   }
 
   if (nextMoveStrength.canSeverelyLimitOpponent) {
-    details.push(`✓ 次の手で相手の手を大きく制限できます`);
+    legacyDetails.push(`🎯 次の手で相手の手を大きく制限できます`);
   }
 
-  // 総合評価
-  let overallAssessment = '';
-  const positiveCount = details.filter((d) => d.startsWith('✓')).length;
-  const negativeCount = details.filter((d) => d.startsWith('×')).length;
+  // 統合評価と従来分析の組み合わせ
+  const allDetails = [...unifiedDetails, ...legacyDetails];
 
-  if (positiveCount >= 3 && negativeCount === 0) {
-    overallAssessment = '非常に有利な局面です';
-  } else if (positiveCount > negativeCount && positiveCount > 0) {
-    overallAssessment = '有利な局面です';
-  } else if (negativeCount > positiveCount && negativeCount > 0) {
-    overallAssessment = '不利な局面です';
+  // 統合評価に基づく総合評価
+  const totalScore = Math.abs(unifiedEvaluation.totalScore);
+  const isAdvantage =
+    player === 'black' ? unifiedEvaluation.totalScore < 0 : unifiedEvaluation.totalScore > 0;
+
+  let overallAssessment = '';
+  if (totalScore > 50) {
+    overallAssessment = isAdvantage ? '非常に有利な局面です' : '非常に不利な局面です';
+  } else if (totalScore > 20) {
+    overallAssessment = isAdvantage ? '有利な局面です' : '不利な局面です';
+  } else if (totalScore > 5) {
+    overallAssessment = isAdvantage ? 'やや有利な局面です' : 'やや不利な局面です';
   } else {
     overallAssessment = '互角の局面です';
   }
@@ -324,7 +319,8 @@ export const explainBoardEvaluation = (
     strongPositions,
     nextMoveStrength,
     overallAssessment,
-    details,
+    details: allDetails,
+    unifiedEvaluation,
   };
 };
 

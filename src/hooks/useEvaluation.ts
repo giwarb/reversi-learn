@@ -129,7 +129,7 @@ export const useEvaluation = (initialAIDepth: number = 4): EvaluationHook => {
             moveEntry.position?.col === entry.position.col
         )
       );
-      
+
       // Update analysis history
       setAnalysisHistory(validAnalysisEntries);
 

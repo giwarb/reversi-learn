@@ -7,6 +7,7 @@ import { globalBoardCache } from './cache/boardCache';
 import { evaluateBoard } from './evaluation';
 import { compareMovesByPriority } from './moveOrdering';
 import type { MoveEvaluation } from './types';
+import { performUnifiedEvaluation, type UnifiedEvaluation } from './unifiedEvaluation';
 
 const { MAX_SCORE, MIN_SCORE } = EVALUATION_CONSTANTS;
 
@@ -235,4 +236,26 @@ export const findBestMove = (
   }
 
   return bestMove;
+};
+
+/**
+ * 統合評価システムを使用した盤面評価
+ * 探索結果と盤面分析を統合
+ */
+export const getUnifiedBoardEvaluation = (
+  board: Board,
+  player: Player,
+  searchDepth?: number
+): UnifiedEvaluation => {
+  let searchScore: number | undefined;
+
+  // 探索深度が指定されている場合は探索実行
+  if (searchDepth && searchDepth > 0) {
+    const bestMove = findBestMove(board, player, searchDepth);
+    if (bestMove) {
+      searchScore = bestMove.score as number;
+    }
+  }
+
+  return performUnifiedEvaluation(board, player, searchDepth, searchScore);
 };

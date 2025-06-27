@@ -9,6 +9,7 @@ interface EvaluationDisplayProps {
   evaluation: number;
   currentPlayer: Player;
   playerColor: Player;
+  searchDepth?: number;
 }
 
 export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
@@ -16,6 +17,7 @@ export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
   evaluation,
   currentPlayer,
   playerColor,
+  searchDepth,
 }) => {
   const [showExplanation, setShowExplanation] = useState(false);
   // 正規化されたスコアを取得（0-100範囲、50が均衡）
@@ -84,12 +86,34 @@ export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
             <h4>【盤面の分析】</h4>
             <div className="explanation-content">
               {(() => {
-                const explanation = explainBoardEvaluation(board, playerColor);
+                const explanation = explainBoardEvaluation(board, playerColor, searchDepth);
                 const brief = getBriefExplanation(explanation);
                 return (
                   <>
                     <div className="overall-assessment">{explanation.overallAssessment}</div>
                     <pre className="explanation-details">{brief}</pre>
+                    {explanation.unifiedEvaluation && (
+                      <div className="unified-evaluation-info">
+                        <div className="evaluation-confidence">
+                          信頼度: {Math.round(explanation.unifiedEvaluation.confidence * 100)}%
+                        </div>
+                        <div className="game-phase">
+                          フェーズ:{' '}
+                          {explanation.unifiedEvaluation.gamePhase.phase === 'early'
+                            ? '序盤'
+                            : explanation.unifiedEvaluation.gamePhase.phase === 'mid'
+                              ? '中盤'
+                              : '終盤'}{' '}
+                          ({explanation.unifiedEvaluation.gamePhase.progressPercentage.toFixed(1)}%
+                          進行)
+                        </div>
+                        {explanation.unifiedEvaluation.searchDepth && (
+                          <div className="search-info">
+                            探索深度: {explanation.unifiedEvaluation.searchDepth}手先まで読み
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </>
                 );
               })()}
