@@ -276,17 +276,20 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   // 深さ4の評価値を計算（メモ化）
   const deepEvaluation = useMemo(() => {
     // ゲーム終了時は計算しない
-    if (gameState.gameStatus !== 'playing') {
+    if (gameState.gameOver) {
       return 0;
     }
     // 絶対的な評価値を計算（マイナス=黒有利、プラス=白有利）
     return minimax(gameState.board, gameState.currentPlayer, 4, -1000000, 1000000);
-  }, [gameState.board, gameState.currentPlayer, gameState.gameStatus]);
+  }, [gameState.board, gameState.currentPlayer, gameState.gameOver]);
 
   // 評価値の更新
   useEffect(() => {
-    setDeepBlackScore(deepEvaluation);
-    setDeepWhiteScore(deepEvaluation);
+    // minimax関数は絶対的な評価値を返す（マイナス=黒有利、プラス=白有利）
+    // UI表示用には、各プレイヤーの視点から見た評価値（0-100の範囲）を計算
+    const normalizedScore = Math.max(0, Math.min(100, 50 + deepEvaluation / 10));
+    setDeepBlackScore(100 - normalizedScore); // 黒の視点：評価値が低いほど有利
+    setDeepWhiteScore(normalizedScore); // 白の視点：評価値が高いほど有利
   }, [deepEvaluation]);
 
   useEffect(() => {
