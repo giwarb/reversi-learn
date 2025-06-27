@@ -53,19 +53,20 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
       if (aiPlayer.isAIThinking || gameState.gameState.gameOver) return;
 
       const boardBeforeMove = gameState.gameState.board;
+      const currentPlayerBeforeMove = gameState.gameState.currentPlayer;
       const success = gameState.makeMove(position);
 
       if (!success) return;
 
       // 悪手検出（人間のプレイヤーの手のみ）
-      if (gameState.gameState.currentPlayer === gameState.playerColor) {
+      if (currentPlayerBeforeMove === gameState.playerColor) {
         // 手を打つ前の評価値を保存
         evaluation.setBeforeMoveScores(evaluation.blackScore, evaluation.whiteScore);
 
         evaluation.analyzeBadMove(
           boardBeforeMove,
           position,
-          gameState.gameState.currentPlayer,
+          currentPlayerBeforeMove,
           gameState.playerColor
         );
       }
