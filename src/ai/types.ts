@@ -10,7 +10,6 @@ export interface MoveEvaluation {
 
 export interface AIConfig {
   maxDepth: number;
-  timeLimit?: number;
   useIterativeDeepening?: boolean; // Iterative Deepeningの有効/無効
   timeLimitMs?: number; // 時間制限（ミリ秒）
 }
