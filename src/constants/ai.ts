@@ -20,6 +20,9 @@ export const EVALUATION_CONSTANTS = {
 
   /** 正規化時の最大生スコア */
   MAX_NORMALIZED_SCORE: 200,
+
+  /** 盤面評価の探索深度（AIレベルとは独立） */
+  EVALUATION_DEPTH: 4,
 };
 
 export const GAME_PHASE_CONSTANTS = {

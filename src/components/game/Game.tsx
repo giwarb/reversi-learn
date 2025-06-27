@@ -1,4 +1,5 @@
 import { type FC, useState } from 'react';
+import { EVALUATION_CONSTANTS } from '../../constants/ai';
 import type { Player } from '../../game/types';
 import { useGameWithAI } from '../../hooks/useGameWithAI';
 import { AILevelNotification } from './AILevelNotification';
@@ -137,7 +138,7 @@ export const Game: FC = () => {
           initialBoard={boardBeforeLastMove}
           playerMove={lastMoveAnalysis.playerMove}
           playerColor={playerColor}
-          depth={4}
+          depth={EVALUATION_CONSTANTS.EVALUATION_DEPTH}
           onClose={() => {
             setShowAnalysis(false);
           }}
