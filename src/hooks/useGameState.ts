@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
-import { globalBoardCache } from '../ai/cache/boardCache';
-import { globalValidMovesCache } from '../ai/cache/validMovesCache';
+import { clearCachesOnGameStart } from '../ai/cache/cacheManager';
 import { countPieces } from '../game/board';
 import { createInitialGameState, playMove, playPass } from '../game/gameState';
 import { getAllValidMoves } from '../game/rules';
@@ -44,16 +43,14 @@ export const useGameState = (): GameStateHook => {
   const resetGame = useCallback(() => {
     setGameState(createInitialGameState());
     setIsPassTurn(false);
-    globalBoardCache.clear();
-    globalValidMovesCache.clear();
+    clearCachesOnGameStart();
   }, []);
 
   const resetGameWithColor = useCallback((newPlayerColor: Player) => {
     setPlayerColor(newPlayerColor);
     setGameState(createInitialGameState());
     setIsPassTurn(false);
-    globalBoardCache.clear();
-    globalValidMovesCache.clear();
+    clearCachesOnGameStart();
   }, []);
 
   const undoLastMove = useCallback(() => {
