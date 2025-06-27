@@ -49,8 +49,8 @@ export const Game: FC = () => {
     setShowColorDialog(true);
   };
 
-  const handleColorSelect = (color: Player) => {
-    resetGameWithColor(color);
+  const handleColorSelect = async (color: Player) => {
+    await resetGameWithColor(color);
     setShowColorDialog(false);
   };
 
