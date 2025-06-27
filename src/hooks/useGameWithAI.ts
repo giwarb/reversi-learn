@@ -107,7 +107,9 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     if (aiPlayer.isAIThinking) return;
 
     gameState.undoLastMove();
-    evaluation.clearLastMoveAnalysis();
+
+    // Restore analysis for the new current game state instead of clearing
+    evaluation.restoreAnalysisForGameState(gameState.gameState, gameState.playerColor);
 
     // プレイヤーが白で、最初の状態に戻った場合、AIに最初の手を打たせる
     if (gameState.playerColor === 'white' && gameState.gameState.moveHistory.length === 0) {
