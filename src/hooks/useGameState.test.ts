@@ -2,15 +2,12 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGameState } from './useGameState';
 
-vi.mock('../ai/cache/boardCache', () => ({
-  globalBoardCache: {
-    clear: vi.fn(),
-  },
+vi.mock('../ai/cache/cacheManager', () => ({
+  clearCachesOnGameStart: vi.fn(),
 }));
 
 vi.mock('../ai/cache/validMovesCache', () => ({
   globalValidMovesCache: {
-    clear: vi.fn(),
     get: vi.fn(() => null),
     set: vi.fn(),
   },
