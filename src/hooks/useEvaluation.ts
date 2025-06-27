@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { minimax } from '../ai/minimax';
+import { EVALUATION_CONSTANTS } from '../constants/ai';
 import type { BadMoveResult } from '../game/badMoveDetector';
 import { BadMoveDetector } from '../game/badMoveDetector';
 import type { Board, GameState, Player, Position } from '../game/types';
@@ -33,7 +34,7 @@ export const useEvaluation = (initialAIDepth: number = 4): EvaluationHook => {
   const [deepWhiteScore, setDeepWhiteScore] = useState(50);
   const [badMoveDetector] = useState(() => new BadMoveDetector(initialAIDepth));
 
-  // 深さ4の評価値を計算（メモ化）
+  // 固定深度での盤面評価値を計算
 
   const updateEvaluation = useCallback((gameState: GameState) => {
     // ゲーム終了時は計算しない
@@ -42,7 +43,13 @@ export const useEvaluation = (initialAIDepth: number = 4): EvaluationHook => {
     }
 
     // 絶対的な評価値を計算（マイナス=黒有利、プラス=白有利）
-    const evaluation = minimax(gameState.board, gameState.currentPlayer, 4, -1000000, 1000000);
+    const evaluation = minimax(
+      gameState.board,
+      gameState.currentPlayer,
+      EVALUATION_CONSTANTS.EVALUATION_DEPTH,
+      EVALUATION_CONSTANTS.MIN_SCORE,
+      EVALUATION_CONSTANTS.MAX_SCORE
+    );
 
     // 統一された正規化関数を使用
     const { blackScore, whiteScore } = getNormalizedScores(evaluation);
