@@ -361,7 +361,7 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                     const isPlayerMove =
                       move.position.row === playerMove.row && move.position.col === playerMove.col;
                     const isBestMove = index === 0;
-                    const isBadMove = index >= analysis.allMoves.length * 0.8;
+                    const isBadMove = index >= (analysis.allMoves?.length || 0) * 0.8;
 
                     // 正規化されたスコアを取得
                     const normalizedScores = getNormalizedScores(move.score);
