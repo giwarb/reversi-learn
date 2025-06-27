@@ -6,6 +6,14 @@ import { BadMoveDetector } from '../game/badMoveDetector';
 import type { Board, GameState, Player, Position } from '../game/types';
 import { getNormalizedScores } from '../utils/evaluationNormalizer';
 
+// Move analysis history entry
+interface MoveAnalysisEntry {
+  moveIndex: number; // Index in fullMoveHistory
+  position: Position;
+  player: Player;
+  analysis: BadMoveResult;
+}
+
 export interface EvaluationHook {
   blackScore: number;
   whiteScore: number;
@@ -24,6 +32,7 @@ export interface EvaluationHook {
   ) => BadMoveResult | null;
   clearLastMoveAnalysis: () => void;
   setAIDepth: (depth: number) => void;
+  restoreAnalysisForGameState: (gameState: GameState, playerColor: Player) => void;
 }
 
 export const useEvaluation = (initialAIDepth: number = 4): EvaluationHook => {
@@ -35,6 +44,7 @@ export const useEvaluation = (initialAIDepth: number = 4): EvaluationHook => {
   const [deepWhiteScore, setDeepWhiteScore] = useState(50);
   const [rawEvaluation, setRawEvaluation] = useState(0);
   const [badMoveDetector] = useState(() => new BadMoveDetector(initialAIDepth));
+  const [analysisHistory, setAnalysisHistory] = useState<MoveAnalysisEntry[]>([]);
 
   // 固定深度での盤面評価値を計算
 
@@ -76,6 +86,20 @@ export const useEvaluation = (initialAIDepth: number = 4): EvaluationHook => {
     ): BadMoveResult | null => {
       const analysis = badMoveDetector.detectBadMove(board, position, currentPlayer, playerColor);
       setLastMoveAnalysis(analysis);
+
+      // Store analysis in history (only for player moves to avoid duplication)
+      if (currentPlayer === playerColor) {
+        setAnalysisHistory((prev) => {
+          const newEntry: MoveAnalysisEntry = {
+            moveIndex: -1, // Will be updated when we know the actual index
+            position,
+            player: currentPlayer,
+            analysis,
+          };
+          return [...prev, newEntry];
+        });
+      }
+
       return analysis;
     },
     [badMoveDetector]
@@ -83,7 +107,60 @@ export const useEvaluation = (initialAIDepth: number = 4): EvaluationHook => {
 
   const clearLastMoveAnalysis = useCallback(() => {
     setLastMoveAnalysis(null);
+    setAnalysisHistory([]);
   }, []);
+
+  const restoreAnalysisForGameState = useCallback(
+    (gameState: GameState, playerColor: Player) => {
+      // If no moves in history, clear analysis and history
+      if (gameState.fullMoveHistory.length === 0) {
+        setLastMoveAnalysis(null);
+        setAnalysisHistory([]);
+        return;
+      }
+
+      // Clean up analysis history - only keep entries that correspond to existing moves
+      const validAnalysisEntries = analysisHistory.filter((entry) =>
+        gameState.fullMoveHistory.some(
+          (moveEntry) =>
+            moveEntry.player === entry.player &&
+            moveEntry.type === 'move' &&
+            moveEntry.position?.row === entry.position.row &&
+            moveEntry.position?.col === entry.position.col
+        )
+      );
+      
+      // Update analysis history
+      setAnalysisHistory(validAnalysisEntries);
+
+      // Look for the most recent player move starting from the end
+      let targetMoveIndex = gameState.fullMoveHistory.length - 1;
+      while (targetMoveIndex >= 0) {
+        const moveEntry = gameState.fullMoveHistory[targetMoveIndex];
+        if (moveEntry.player === playerColor && moveEntry.type === 'move' && moveEntry.position) {
+          // Found the last player move, try to find its analysis in the cleaned history
+          const matchingAnalysis = validAnalysisEntries.find(
+            (entry) =>
+              entry.position.row === moveEntry.position?.row &&
+              entry.position.col === moveEntry.position?.col &&
+              entry.player === playerColor
+          );
+
+          if (matchingAnalysis) {
+            setLastMoveAnalysis(matchingAnalysis.analysis);
+          } else {
+            setLastMoveAnalysis(null);
+          }
+          return;
+        }
+        targetMoveIndex--;
+      }
+
+      // No player moves found, clear analysis
+      setLastMoveAnalysis(null);
+    },
+    [analysisHistory]
+  );
 
   const setAIDepth = useCallback(
     (depth: number) => {
@@ -106,5 +183,6 @@ export const useEvaluation = (initialAIDepth: number = 4): EvaluationHook => {
     analyzeBadMove,
     clearLastMoveAnalysis,
     setAIDepth,
+    restoreAnalysisForGameState,
   };
 };
