@@ -9,6 +9,7 @@ import { getNormalizedScores } from '../utils/evaluationNormalizer';
 export interface EvaluationHook {
   blackScore: number;
   whiteScore: number;
+  rawEvaluation: number;
   lastMoveAnalysis: BadMoveResult | null;
   beforeMoveBlackScore: number;
   beforeMoveWhiteScore: number;
@@ -32,6 +33,7 @@ export const useEvaluation = (initialAIDepth: number = 4): EvaluationHook => {
   const [beforeMoveWhiteScore, setBeforeMoveWhiteScore] = useState(0);
   const [deepBlackScore, setDeepBlackScore] = useState(50);
   const [deepWhiteScore, setDeepWhiteScore] = useState(50);
+  const [rawEvaluation, setRawEvaluation] = useState(0);
   const [badMoveDetector] = useState(() => new BadMoveDetector(initialAIDepth));
 
   // 固定深度での盤面評価値を計算
@@ -50,6 +52,9 @@ export const useEvaluation = (initialAIDepth: number = 4): EvaluationHook => {
       EVALUATION_CONSTANTS.MIN_SCORE,
       EVALUATION_CONSTANTS.MAX_SCORE
     );
+
+    // 生の評価値を保存
+    setRawEvaluation(evaluation);
 
     // 統一された正規化関数を使用
     const { blackScore, whiteScore } = getNormalizedScores(evaluation);
@@ -91,6 +96,7 @@ export const useEvaluation = (initialAIDepth: number = 4): EvaluationHook => {
   return {
     blackScore: deepBlackScore,
     whiteScore: deepWhiteScore,
+    rawEvaluation,
     lastMoveAnalysis,
     beforeMoveBlackScore,
     beforeMoveWhiteScore,
