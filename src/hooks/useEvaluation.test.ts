@@ -53,8 +53,11 @@ describe('useEvaluation', () => {
       result.current.updateEvaluation(mockGameState);
     });
 
-    expect(result.current.blackScore).toBe(45); // 100 - 55 (50 + 50/10)
-    expect(result.current.whiteScore).toBe(55); // 50 + 50/10
+    // getNormalizedScores(50)の期待値を確認
+    // 50 -> normalizeEvaluation: ((50 + 200) / 400) * 100 = 62.5
+    // blackScore: 100 - 62.5 = 37.5, whiteScore: 62.5
+    expect(result.current.blackScore).toBe(37.5);
+    expect(result.current.whiteScore).toBe(62.5);
   });
 
   it('should detect bad moves correctly', () => {
