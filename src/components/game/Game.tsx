@@ -25,7 +25,7 @@ export const Game: FC = () => {
     undoLastMove,
     canUndo,
     playerColor,
-    blackScore,
+    rawEvaluation,
     isPassTurn,
     useIterativeDeepening,
     setUseIterativeDeepening,
@@ -113,7 +113,7 @@ export const Game: FC = () => {
         <div className="game-right-section">
           <EvaluationDisplay
             board={gameState.board}
-            evaluation={blackScore}
+            evaluation={rawEvaluation}
             currentPlayer={gameState.currentPlayer}
             playerColor={playerColor}
           />

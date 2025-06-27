@@ -21,6 +21,7 @@ export interface GameWithAIState {
   playerColor: Player;
   blackScore: number;
   whiteScore: number;
+  rawEvaluation: number;
   isPassTurn: boolean;
   beforeMoveBlackScore: number;
   beforeMoveWhiteScore: number;
@@ -211,6 +212,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     playerColor: gameState.playerColor,
     blackScore: evaluation.blackScore,
     whiteScore: evaluation.whiteScore,
+    rawEvaluation: evaluation.rawEvaluation,
     isPassTurn: gameState.isPassTurn,
     beforeMoveBlackScore: evaluation.beforeMoveBlackScore,
     beforeMoveWhiteScore: evaluation.beforeMoveWhiteScore,
