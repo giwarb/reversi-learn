@@ -1,6 +1,7 @@
 import { EVALUATION_CONSTANTS, MOVE_QUALITY_CONSTANTS } from '../constants/ai';
 import { getAllValidMoves, getOpponent, makeMove } from '../game/rules';
 import type { Board, Player, Position } from '../game/types';
+import { createEvaluationScore } from '../game/types';
 import { analyzeMove } from './evaluationReasons';
 import { minimax } from './minimax';
 import type { MoveEvaluation } from './types';
@@ -47,16 +48,16 @@ export const analyzeBadMove = (
     );
     moveScores.push({
       position: { row: move.row, col: move.col },
-      score,
+      score: createEvaluationScore(score),
       depth,
     });
   }
 
   // スコアでソート（黒は昇順、白は降順）
   if (player === 'black') {
-    moveScores.sort((a, b) => a.score - b.score); // 黒は小さい値が良い
+    moveScores.sort((a, b) => (a.score as number) - (b.score as number)); // 黒は小さい値が良い
   } else {
-    moveScores.sort((a, b) => b.score - a.score); // 白は大きい値が良い
+    moveScores.sort((a, b) => (b.score as number) - (a.score as number)); // 白は大きい値が良い
   }
 
   // 最善手を見つける
@@ -77,8 +78,8 @@ export const analyzeBadMove = (
     // プレイヤーによって比較条件を変える
     const isBetter =
       player === 'black'
-        ? move.score < playerScore.score // 黒は小さい値が良い
-        : move.score > playerScore.score; // 白は大きい値が良い
+        ? (move.score as number) < (playerScore.score as number) // 黒は小さい値が良い
+        : (move.score as number) > (playerScore.score as number); // 白は大きい値が良い
 
     if (isBetter) {
       playerRank++;
@@ -88,9 +89,11 @@ export const analyzeBadMove = (
   }
 
   // 同じスコアの手の数を数える
-  const sameScoreCount = moveScores.filter((m) => m.score === playerScore.score).length;
+  const sameScoreCount = moveScores.filter(
+    (m) => (m.score as number) === (playerScore.score as number)
+  ).length;
 
-  const scoreDiff = bestMove.score - playerScore.score;
+  const scoreDiff = (bestMove.score as number) - (playerScore.score as number);
   const totalMoves = moveScores.length;
 
   // パーセンタイルの計算（同率の場合は最も良い順位で計算）
@@ -127,7 +130,7 @@ export const analyzeBadMove = (
 
   return {
     position: playerMove,
-    score: playerScore.score,
+    score: playerScore.score as number,
     scoreDiff,
     reasons,
     isBadMove,

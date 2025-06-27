@@ -2,6 +2,7 @@ import { AI_CONSTANTS, EVALUATION_CONSTANTS } from '../constants/ai';
 import { checkGameOver } from '../game/gameState';
 import { getAllValidMoves, getOpponent, getValidMove, makeMove } from '../game/rules';
 import type { Board, GameState, Player, Position } from '../game/types';
+import { createEvaluationScore } from '../game/types';
 import { globalBoardCache } from './cache/boardCache';
 import { evaluateBoard } from './evaluation';
 import type { MoveEvaluation } from './types';
@@ -17,7 +18,7 @@ export const minimax = (
 ): number => {
   // Base case: return evaluation at depth 0
   if (depth === 0) {
-    return evaluateBoard(board);
+    return evaluateBoard(board) as number;
   }
 
   const validMoves = getAllValidMoves(board, player);
@@ -141,7 +142,7 @@ export const findBestMoveIterativeDeepening = (
         bestScore = score;
         bestMove = {
           position: { row: move.row, col: move.col },
-          score,
+          score: createEvaluationScore(score),
           depth: currentDepth,
           timeSpent: Date.now() - startTime,
         };
@@ -150,7 +151,7 @@ export const findBestMoveIterativeDeepening = (
         bestScore = score;
         bestMove = {
           position: { row: move.row, col: move.col },
-          score,
+          score: createEvaluationScore(score),
           depth: currentDepth,
           timeSpent: Date.now() - startTime,
         };
@@ -223,7 +224,7 @@ export const findBestMove = (
   if (cached?.bestMove) {
     return {
       position: cached.bestMove,
-      score: cached.evaluation,
+      score: createEvaluationScore(cached.evaluation),
       depth: depth,
     };
   }
@@ -260,14 +261,14 @@ export const findBestMove = (
       bestScore = score;
       bestMove = {
         position: { row: move.row, col: move.col },
-        score,
+        score: createEvaluationScore(score),
         depth: depth,
       };
     } else if (player === 'white' && score > bestScore) {
       bestScore = score;
       bestMove = {
         position: { row: move.row, col: move.col },
-        score,
+        score: createEvaluationScore(score),
         depth: depth,
       };
     }
