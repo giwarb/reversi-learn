@@ -15,17 +15,9 @@ export const minimax = (
   alpha: number,
   beta: number
 ): number => {
-  // Check cache for previously evaluated position
-  const cached = globalBoardCache.get(board, depth, player, player === 'white');
-  if (cached !== null) {
-    return cached.evaluation;
-  }
-
   // Base case: return evaluation at depth 0
   if (depth === 0) {
-    const evaluation = evaluateBoard(board);
-    globalBoardCache.set(board, evaluation, null, 0, player, player === 'white');
-    return evaluation;
+    return evaluateBoard(board);
   }
 
   const validMoves = getAllValidMoves(board, player);
@@ -64,16 +56,12 @@ export const minimax = (
   if (player === 'white') {
     // White player: maximize score
     let maxEval = MIN_SCORE;
-    let bestMove = null;
 
     for (const move of validMoves) {
       const newBoard = makeMove(board, move, player);
       const evaluation = minimax(newBoard, getOpponent(player), depth - 1, alpha, beta);
 
-      if (evaluation > maxEval) {
-        maxEval = evaluation;
-        bestMove = move;
-      }
+      maxEval = Math.max(maxEval, evaluation);
       alpha = Math.max(alpha, evaluation);
 
       if (beta <= alpha) {
@@ -81,22 +69,16 @@ export const minimax = (
       }
     }
 
-    // Store result in cache
-    globalBoardCache.set(board, maxEval, bestMove, depth, player, true);
     return maxEval;
   } else {
     // Black player: minimize score
     let minEval = MAX_SCORE;
-    let bestMove = null;
 
     for (const move of validMoves) {
       const newBoard = makeMove(board, move, player);
       const evaluation = minimax(newBoard, getOpponent(player), depth - 1, alpha, beta);
 
-      if (evaluation < minEval) {
-        minEval = evaluation;
-        bestMove = move;
-      }
+      minEval = Math.min(minEval, evaluation);
       beta = Math.min(beta, evaluation);
 
       if (beta <= alpha) {
@@ -104,8 +86,6 @@ export const minimax = (
       }
     }
 
-    // Store result in cache
-    globalBoardCache.set(board, minEval, bestMove, depth, player, false);
     return minEval;
   }
 };
