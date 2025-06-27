@@ -5,20 +5,20 @@ import {
 } from '../../ai/boardEvaluationExplainer';
 
 interface EvaluationSummaryProps {
-  playerScore: number;
-  aiScore: number;
+  blackScore: number;
+  whiteScore: number;
   explanation: BoardEvaluationExplanation;
 }
 
 export const EvaluationSummary: FC<EvaluationSummaryProps> = ({
-  playerScore,
-  aiScore,
+  blackScore,
+  whiteScore,
   explanation,
 }) => {
   return (
     <div className="board-evaluation">
       <div className="eval-score">
-        あなた: {playerScore.toFixed(1)} vs AI: {aiScore.toFixed(1)}
+        黒: {blackScore.toFixed(1)} vs 白: {whiteScore.toFixed(1)}
       </div>
       <div className="board-analysis">
         <h4>盤面分析</h4>

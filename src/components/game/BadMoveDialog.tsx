@@ -161,15 +161,13 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                         highlightType="player-move"
                       />
                       <EvaluationSummary
-                        playerScore={(() => {
-                          const { blackScore, whiteScore } =
-                            getNormalizedScores(playerMoveEvaluation);
-                          return playerColor === 'black' ? blackScore : whiteScore;
+                        blackScore={(() => {
+                          const { blackScore } = getNormalizedScores(playerMoveEvaluation);
+                          return blackScore;
                         })()}
-                        aiScore={(() => {
-                          const { blackScore, whiteScore } =
-                            getNormalizedScores(playerMoveEvaluation);
-                          return playerColor === 'black' ? whiteScore : blackScore;
+                        whiteScore={(() => {
+                          const { whiteScore } = getNormalizedScores(playerMoveEvaluation);
+                          return whiteScore;
                         })()}
                         explanation={playerMoveExplanation}
                       />
@@ -186,17 +184,13 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                           highlightType="ai-recommendation"
                         />
                         <EvaluationSummary
-                          playerScore={(() => {
-                            const { blackScore, whiteScore } = getNormalizedScores(
-                              aiRecommendationEvaluation
-                            );
-                            return playerColor === 'black' ? blackScore : whiteScore;
+                          blackScore={(() => {
+                            const { blackScore } = getNormalizedScores(aiRecommendationEvaluation);
+                            return blackScore;
                           })()}
-                          aiScore={(() => {
-                            const { blackScore, whiteScore } = getNormalizedScores(
-                              aiRecommendationEvaluation
-                            );
-                            return playerColor === 'black' ? whiteScore : blackScore;
+                          whiteScore={(() => {
+                            const { whiteScore } = getNormalizedScores(aiRecommendationEvaluation);
+                            return whiteScore;
                           })()}
                           explanation={aiMoveExplanation}
                         />
