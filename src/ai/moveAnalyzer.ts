@@ -1,3 +1,4 @@
+import { EVALUATION_CONSTANTS, MOVE_QUALITY_CONSTANTS } from '../constants/ai';
 import { getAllValidMoves, getOpponent, makeMove } from '../game/rules';
 import type { Board, Player, Position } from '../game/types';
 import { analyzeMove } from './evaluationReasons';
@@ -37,7 +38,13 @@ export const analyzeBadMove = (
   for (const move of validMoves) {
     const newBoard = makeMove(board, move, player);
     // 深さ4の探索で評価
-    const score = minimax(newBoard, getOpponent(player), depth, -1000000, 1000000);
+    const score = minimax(
+      newBoard,
+      getOpponent(player),
+      depth,
+      EVALUATION_CONSTANTS.MIN_SCORE,
+      EVALUATION_CONSTANTS.MAX_SCORE
+    );
     moveScores.push({
       position: { row: move.row, col: move.col },
       score,
@@ -89,8 +96,8 @@ export const analyzeBadMove = (
   // パーセンタイルの計算（同率の場合は最も良い順位で計算）
   const percentile = ((totalMoves - playerRank + 1) / totalMoves) * 100;
 
-  // 上位20%に入らない場合は悪手
-  const isBadMove = percentile < 80; // 80パーセンタイル未満は悪手
+  // 悪手判定
+  const isBadMove = percentile < MOVE_QUALITY_CONSTANTS.BAD_MOVE_THRESHOLD;
 
   // 理由の分析
   const moveReasons = analyzeMove(board, playerMove, player);
@@ -102,9 +109,9 @@ export const analyzeBadMove = (
     } else {
       reasons.push(`${totalMoves}手中${playerRank}位の手です（上位${percentile.toFixed(0)}%）`);
     }
-    if (percentile < 20) {
+    if (percentile < MOVE_QUALITY_CONSTANTS.TERRIBLE_MOVE_THRESHOLD) {
       reasons.push('これは大悪手です！');
-    } else if (percentile < 50) {
+    } else if (percentile < MOVE_QUALITY_CONSTANTS.SUGGEST_BETTER_THRESHOLD) {
       reasons.push('より良い手を選ぶことをお勧めします。');
     }
     const bestColLetter = String.fromCharCode('a'.charCodeAt(0) + bestMove.position.col);

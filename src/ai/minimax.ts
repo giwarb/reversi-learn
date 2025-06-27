@@ -1,3 +1,4 @@
+import { AI_CONSTANTS, EVALUATION_CONSTANTS } from '../constants/ai';
 import { checkGameOver } from '../game/gameState';
 import { getAllValidMoves, getOpponent, getValidMove, makeMove } from '../game/rules';
 import type { Board, GameState, Player, Position } from '../game/types';
@@ -5,8 +6,7 @@ import { globalBoardCache } from './cache/boardCache';
 import { evaluateBoard } from './evaluation';
 import type { MoveEvaluation } from './types';
 
-const MAX_SCORE = 1000000;
-const MIN_SCORE = -1000000;
+const { MAX_SCORE, MIN_SCORE } = EVALUATION_CONSTANTS;
 
 export const minimax = (
   board: Board,
@@ -114,7 +114,7 @@ export const findBestMoveIterativeDeepening = (
   board: Board,
   player: Player,
   maxDepth: number,
-  timeLimitMs: number = 5000
+  timeLimitMs: number = AI_CONSTANTS.DEFAULT_TIME_LIMIT_MS
 ): MoveEvaluation | null => {
   const startTime = Date.now();
   let bestMoveAtDepth: MoveEvaluation | null = null;

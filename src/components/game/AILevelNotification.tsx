@@ -1,4 +1,5 @@
 import { type FC, useEffect, useState } from 'react';
+import { UI_CONSTANTS } from '../../constants/ai';
 import './AILevelNotification.css';
 
 interface AILevelNotificationProps {
@@ -15,14 +16,14 @@ export const AILevelNotification: FC<AILevelNotificationProps> = ({ level }) => 
       setPrevLevel(level);
       const timer = setTimeout(() => {
         setShow(false);
-      }, 2000);
+      }, UI_CONSTANTS.NOTIFICATION_DURATION_MS);
       return () => clearTimeout(timer);
     }
   }, [level, prevLevel]);
 
   const getLevelDescription = (level: number) => {
-    if (level <= 2) return '弱い';
-    if (level <= 4) return '普通';
+    if (level <= UI_CONSTANTS.EASY_LEVEL_THRESHOLD) return '弱い';
+    if (level <= UI_CONSTANTS.MEDIUM_LEVEL_THRESHOLD) return '普通';
     return '強い';
   };
 
