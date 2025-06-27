@@ -78,6 +78,16 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
     [boardAfterAIRecommendation, playerColor]
   );
 
+  const playerMoveScores = useMemo(
+    () => getNormalizedScores(playerMoveEvaluation),
+    [playerMoveEvaluation]
+  );
+
+  const aiRecommendationScores = useMemo(
+    () => getNormalizedScores(aiRecommendationEvaluation),
+    [aiRecommendationEvaluation]
+  );
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -161,14 +171,8 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                         highlightType="player-move"
                       />
                       <EvaluationSummary
-                        blackScore={(() => {
-                          const { blackScore } = getNormalizedScores(playerMoveEvaluation);
-                          return blackScore;
-                        })()}
-                        whiteScore={(() => {
-                          const { whiteScore } = getNormalizedScores(playerMoveEvaluation);
-                          return whiteScore;
-                        })()}
+                        blackScore={playerMoveScores.blackScore}
+                        whiteScore={playerMoveScores.whiteScore}
                         explanation={playerMoveExplanation}
                       />
                     </div>
@@ -184,14 +188,8 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                           highlightType="ai-recommendation"
                         />
                         <EvaluationSummary
-                          blackScore={(() => {
-                            const { blackScore } = getNormalizedScores(aiRecommendationEvaluation);
-                            return blackScore;
-                          })()}
-                          whiteScore={(() => {
-                            const { whiteScore } = getNormalizedScores(aiRecommendationEvaluation);
-                            return whiteScore;
-                          })()}
+                          blackScore={aiRecommendationScores.blackScore}
+                          whiteScore={aiRecommendationScores.whiteScore}
                           explanation={aiMoveExplanation}
                         />
                       </div>
