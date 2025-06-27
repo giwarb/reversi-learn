@@ -1,10 +1,13 @@
 import { type FC, useEffect, useMemo } from 'react';
-import { explainBoardEvaluation, getBriefExplanation } from '../../ai/boardEvaluationExplainer';
+import { explainBoardEvaluation } from '../../ai/boardEvaluationExplainer';
 import { minimax } from '../../ai/minimax';
 import type { BadMoveResult } from '../../game/badMoveDetector';
 import { getValidMove, makeMove } from '../../game/rules';
 import type { Board, Player, Position } from '../../game/types';
 import { getNormalizedScores } from '../../utils/evaluationNormalizer';
+import { BoardDisplay } from './BoardDisplay';
+import { EvaluationSummary } from './EvaluationSummary';
+import { MoveList } from './MoveList';
 import './BadMoveDialog.css';
 
 interface BadMoveDialogProps {
@@ -15,12 +18,6 @@ interface BadMoveDialogProps {
   depth: number;
   onClose: () => void;
   onUndo?: () => void;
-}
-
-interface CellHighlight {
-  row: number;
-  col: number;
-  type: 'player-move' | 'ai-recommendation' | 'danger' | 'opponent-response';
 }
 
 export const BadMoveDialog: FC<BadMoveDialogProps> = ({
@@ -98,27 +95,6 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
     return '手の分析';
   };
 
-  const getCellClass = (row: number, col: number, highlights: CellHighlight[]): string => {
-    const highlight = highlights.find((h) => h.row === row && h.col === col);
-    if (!highlight) return '';
-
-    switch (highlight.type) {
-      case 'player-move':
-        return 'highlight-player-move';
-      case 'ai-recommendation':
-        return 'highlight-ai-recommendation';
-      case 'danger':
-        return 'highlight-danger';
-      case 'opponent-response':
-        return 'highlight-opponent-response';
-      default:
-        return '';
-    }
-  };
-
-  const columnLabels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-  const rowLabels = ['1', '2', '3', '4', '5', '6', '7', '8'];
-
   return (
     <>
       <div
@@ -159,184 +135,58 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
                   </div>
                 )}
 
-                {/* 手を打つ前の盤面（上ペイン） */}
-                <div className="board-section">
-                  <h3>手を打つ前の盤面</h3>
-                  <div className="mini-board">
-                    <div className="mini-board-with-labels">
-                      <div className="mini-corner-space" />
-                      <div className="mini-column-labels">
-                        {columnLabels.map((label) => (
-                          <div key={label} className="mini-label">
-                            {label}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mini-row-labels">
-                        {rowLabels.map((label) => (
-                          <div key={label} className="mini-label">
-                            {label}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="board-grid">
-                        {boardBeforeMove.map((row, rowIndex) => (
-                          // biome-ignore lint/suspicious/noArrayIndexKey: 固定サイズ(8x8)のゲームボードで行の順序は不変
-                          <div key={rowIndex} className="board-row">
-                            {row.map((cell, colIndex) => (
-                              // biome-ignore lint/suspicious/noArrayIndexKey: 固定サイズ(8x8)のゲームボードで列の順序は不変
-                              <div key={`${rowIndex}-${colIndex}`} className="board-cell">
-                                {cell && <div className={`stone ${cell}`} />}
-                              </div>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <BoardDisplay board={boardBeforeMove} title="手を打つ前の盤面" highlights={[]} />
 
                 {/* 左右ペイン：プレイヤーの手とAI推奨手の比較 */}
                 <div className="boards-comparison">
-                  {/* 左ペイン：プレイヤーの手 */}
                   <div className="board-section">
-                    <h3>あなたの手</h3>
                     <div className="board-subsection">
-                      <div className="mini-board">
-                        <div className="mini-board-with-labels">
-                          <div className="mini-corner-space" />
-                          <div className="mini-column-labels">
-                            {columnLabels.map((label) => (
-                              <div key={label} className="mini-label">
-                                {label}
-                              </div>
-                            ))}
-                          </div>
-                          <div className="mini-row-labels">
-                            {rowLabels.map((label) => (
-                              <div key={label} className="mini-label">
-                                {label}
-                              </div>
-                            ))}
-                          </div>
-                          <div className="board-grid">
-                            {boardAfterPlayerMove.map((row, rowIndex) => (
-                              // biome-ignore lint/suspicious/noArrayIndexKey: 固定サイズ(8x8)のゲームボードで行の順序は不変
-                              <div key={rowIndex} className="board-row">
-                                {row.map((cell, colIndex) => (
-                                  <div
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: 固定サイズ(8x8)のゲームボードで列の順序は不変
-                                    key={`${rowIndex}-${colIndex}`}
-                                    className={`board-cell ${getCellClass(rowIndex, colIndex, [
-                                      {
-                                        row: playerMove.row,
-                                        col: playerMove.col,
-                                        type: 'player-move',
-                                      },
-                                    ])}`}
-                                  >
-                                    {cell && <div className={`stone ${cell}`} />}
-                                  </div>
-                                ))}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="board-evaluation">
-                        <div className="eval-score">
-                          {(() => {
-                            const { blackScore, whiteScore } =
-                              getNormalizedScores(playerMoveEvaluation);
-                            const playerScore = playerColor === 'black' ? blackScore : whiteScore;
-                            const aiScore = playerColor === 'black' ? whiteScore : blackScore;
-                            return `あなた: ${playerScore.toFixed(1)} vs AI: ${aiScore.toFixed(1)}`;
-                          })()}
-                        </div>
-                        <div className="board-analysis">
-                          <h4>盤面分析</h4>
-                          <div className="analysis-content">
-                            <div className="overall-assessment">
-                              {playerMoveExplanation.overallAssessment}
-                            </div>
-                            <pre className="explanation-details">
-                              {getBriefExplanation(playerMoveExplanation)}
-                            </pre>
-                          </div>
-                        </div>
-                      </div>
+                      <BoardDisplay
+                        board={boardAfterPlayerMove}
+                        title="あなたの手"
+                        highlights={[playerMove]}
+                        highlightType="player-move"
+                      />
+                      <EvaluationSummary
+                        playerScore={(() => {
+                          const { blackScore, whiteScore } =
+                            getNormalizedScores(playerMoveEvaluation);
+                          return playerColor === 'black' ? blackScore : whiteScore;
+                        })()}
+                        aiScore={(() => {
+                          const { blackScore, whiteScore } =
+                            getNormalizedScores(playerMoveEvaluation);
+                          return playerColor === 'black' ? whiteScore : blackScore;
+                        })()}
+                        explanation={playerMoveExplanation}
+                      />
                     </div>
                   </div>
 
-                  {/* 右ペイン：AIの推奨手 */}
                   {aiRecommendedMove && (
                     <div className="board-section">
-                      <h3>AIの推奨手</h3>
                       <div className="board-subsection">
-                        <div className="mini-board">
-                          <div className="mini-board-with-labels">
-                            <div className="mini-corner-space" />
-                            <div className="mini-column-labels">
-                              {columnLabels.map((label) => (
-                                <div key={label} className="mini-label">
-                                  {label}
-                                </div>
-                              ))}
-                            </div>
-                            <div className="mini-row-labels">
-                              {rowLabels.map((label) => (
-                                <div key={label} className="mini-label">
-                                  {label}
-                                </div>
-                              ))}
-                            </div>
-                            <div className="board-grid">
-                              {boardAfterAIRecommendation.map((row, rowIndex) => (
-                                // biome-ignore lint/suspicious/noArrayIndexKey: 固定サイズ(8x8)のゲームボードで行の順序は不変
-                                <div key={rowIndex} className="board-row">
-                                  {row.map((cell, colIndex) => (
-                                    <div
-                                      // biome-ignore lint/suspicious/noArrayIndexKey: 固定サイズ(8x8)のゲームボードで列の順序は不変
-                                      key={`${rowIndex}-${colIndex}`}
-                                      className={`board-cell ${getCellClass(rowIndex, colIndex, [
-                                        {
-                                          row: aiRecommendedMove.row,
-                                          col: aiRecommendedMove.col,
-                                          type: 'ai-recommendation',
-                                        },
-                                      ])}`}
-                                    >
-                                      {cell && <div className={`stone ${cell}`} />}
-                                    </div>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="board-evaluation">
-                          <div className="eval-score">
-                            {(() => {
-                              const { blackScore, whiteScore } = getNormalizedScores(
-                                aiRecommendationEvaluation
-                              );
-                              const playerScore = playerColor === 'black' ? blackScore : whiteScore;
-                              const aiScore = playerColor === 'black' ? whiteScore : blackScore;
-                              return `あなた: ${playerScore.toFixed(1)} vs AI: ${aiScore.toFixed(1)}`;
-                            })()}
-                          </div>
-                          <div className="board-analysis">
-                            <h4>盤面分析</h4>
-                            <div className="analysis-content">
-                              <div className="overall-assessment">
-                                {aiMoveExplanation.overallAssessment}
-                              </div>
-                              <pre className="explanation-details">
-                                {getBriefExplanation(aiMoveExplanation)}
-                              </pre>
-                            </div>
-                          </div>
-                        </div>
+                        <BoardDisplay
+                          board={boardAfterAIRecommendation}
+                          title="AIの推奨手"
+                          highlights={[aiRecommendedMove]}
+                          highlightType="ai-recommendation"
+                        />
+                        <EvaluationSummary
+                          playerScore={(() => {
+                            const { blackScore, whiteScore } = getNormalizedScores(
+                              aiRecommendationEvaluation
+                            );
+                            return playerColor === 'black' ? blackScore : whiteScore;
+                          })()}
+                          aiScore={(() => {
+                            const { blackScore, whiteScore } = getNormalizedScores(
+                              aiRecommendationEvaluation
+                            );
+                            return playerColor === 'black' ? whiteScore : blackScore;
+                          })()}
+                          explanation={aiMoveExplanation}
+                        />
                       </div>
                     </div>
                   )}
@@ -350,56 +200,12 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
               </div>
             )}
 
-            {/* 全ての合法手一覧 */}
             {analysis?.allMoves && analysis.allMoves.length > 0 && (
-              <div className="all-moves-section">
-                <h3>全ての合法手と評価値</h3>
-                <div className="moves-list">
-                  {analysis.allMoves.map((move, index) => {
-                    const colLetter = String.fromCharCode('a'.charCodeAt(0) + move.position.col);
-                    const rowNumber = move.position.row + 1;
-                    const isPlayerMove =
-                      move.position.row === playerMove.row && move.position.col === playerMove.col;
-                    const isBestMove = index === 0;
-                    const isBadMove = index >= (analysis.allMoves?.length || 0) * 0.8;
-
-                    // 正規化されたスコアを取得
-                    const normalizedScores = getNormalizedScores(move.score);
-                    const playerNormalizedScore =
-                      playerColor === 'black'
-                        ? normalizedScores.blackScore
-                        : normalizedScores.whiteScore;
-                    const aiNormalizedScore =
-                      playerColor === 'black'
-                        ? normalizedScores.whiteScore
-                        : normalizedScores.blackScore;
-
-                    return (
-                      <div
-                        key={`${move.position.row}-${move.position.col}`}
-                        className={`move-item ${isPlayerMove ? 'player-move' : ''} ${isBestMove && !isPlayerMove ? 'best-move' : ''} ${isBadMove && !isPlayerMove && !isBestMove ? 'bad-move' : ''}`}
-                      >
-                        <span className="move-rank">#{index + 1}</span>
-                        <span className="move-position">
-                          {colLetter}
-                          {rowNumber}
-                        </span>
-                        <span className="move-evaluation">
-                          {isPlayerMove && '(あなたの手)'}
-                          {isBestMove && !isPlayerMove && '(最善手)'}
-                        </span>
-                        <span className="move-score">
-                          {playerNormalizedScore.toFixed(1)} vs {aiNormalizedScore.toFixed(1)}
-                          <span style={{ marginLeft: '8px', color: '#666' }}>
-                            ({move.score > 0 ? '+' : ''}
-                            {move.score.toFixed(0)}点)
-                          </span>
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <MoveList
+                moves={analysis.allMoves}
+                playerMove={playerMove}
+                playerColor={playerColor}
+              />
             )}
           </div>
 
