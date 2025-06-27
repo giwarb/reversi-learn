@@ -5,6 +5,7 @@ import type { Board, GameState, Player, Position } from '../game/types';
 import { createEvaluationScore } from '../game/types';
 import { globalBoardCache } from './cache/boardCache';
 import { evaluateBoard } from './evaluation';
+import { compareMovesByPriority } from './moveOrdering';
 import type { MoveEvaluation } from './types';
 
 const { MAX_SCORE, MIN_SCORE } = EVALUATION_CONSTANTS;
@@ -177,41 +178,7 @@ export const findBestMoveIterativeDeepening = (
 
 // ムーブオーダリング関数
 const orderMoves = (moves: Position[], previousBest: Position | null): Position[] => {
-  if (!previousBest) {
-    // 前回の最善手がない場合は、角と辺を優先
-    return [...moves].sort((a, b) => {
-      const isCornerA = (a.row === 0 || a.row === 7) && (a.col === 0 || a.col === 7);
-      const isCornerB = (b.row === 0 || b.row === 7) && (b.col === 0 || b.col === 7);
-      if (isCornerA && !isCornerB) return -1;
-      if (!isCornerA && isCornerB) return 1;
-
-      const isEdgeA = a.row === 0 || a.row === 7 || a.col === 0 || a.col === 7;
-      const isEdgeB = b.row === 0 || b.row === 7 || b.col === 0 || b.col === 7;
-      if (isEdgeA && !isEdgeB) return -1;
-      if (!isEdgeA && isEdgeB) return 1;
-
-      return 0;
-    });
-  }
-
-  // 前回の最善手を最初に、その後は角と辺を優先
-  return [...moves].sort((a, b) => {
-    // 前回の最善手を最優先
-    if (a.row === previousBest.row && a.col === previousBest.col) return -1;
-    if (b.row === previousBest.row && b.col === previousBest.col) return 1;
-
-    const isCornerA = (a.row === 0 || a.row === 7) && (a.col === 0 || a.col === 7);
-    const isCornerB = (b.row === 0 || b.row === 7) && (b.col === 0 || b.col === 7);
-    if (isCornerA && !isCornerB) return -1;
-    if (!isCornerA && isCornerB) return 1;
-
-    const isEdgeA = a.row === 0 || a.row === 7 || a.col === 0 || a.col === 7;
-    const isEdgeB = b.row === 0 || b.row === 7 || b.col === 0 || b.col === 7;
-    if (isEdgeA && !isEdgeB) return -1;
-    if (!isEdgeA && isEdgeB) return 1;
-
-    return 0;
-  });
+  return [...moves].sort((a, b) => compareMovesByPriority(a, b, previousBest || undefined));
 };
 
 export const findBestMove = (
@@ -239,19 +206,7 @@ export const findBestMove = (
   let bestScore = player === 'black' ? MAX_SCORE : MIN_SCORE;
 
   // ムーブオーダリング：角と辺を優先的に探索
-  const orderedMoves = [...validMoves].sort((a, b) => {
-    const isCornerA = (a.row === 0 || a.row === 7) && (a.col === 0 || a.col === 7);
-    const isCornerB = (b.row === 0 || b.row === 7) && (b.col === 0 || b.col === 7);
-    if (isCornerA && !isCornerB) return -1;
-    if (!isCornerA && isCornerB) return 1;
-
-    const isEdgeA = a.row === 0 || a.row === 7 || a.col === 0 || a.col === 7;
-    const isEdgeB = b.row === 0 || b.row === 7 || b.col === 0 || b.col === 7;
-    if (isEdgeA && !isEdgeB) return -1;
-    if (!isEdgeA && isEdgeB) return 1;
-
-    return 0;
-  });
+  const orderedMoves = [...validMoves].sort(compareMovesByPriority);
 
   for (const move of orderedMoves) {
     const newBoard = makeMove(board, move, player);
