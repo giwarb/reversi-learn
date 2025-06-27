@@ -6,7 +6,7 @@ import { analyzeMove } from './evaluationReasons';
 import { minimax } from './minimax';
 import type { MoveEvaluation } from './types';
 
-export interface MoveAnalysis {
+export interface MoveRankingAnalysis {
   position: Position;
   score: number;
   scoreDiff: number;
@@ -18,12 +18,12 @@ export interface MoveAnalysis {
   allMoves?: MoveEvaluation[]; // 全ての合法手とその評価値
 }
 
-export const analyzeBadMove = (
+export const analyzeMoveRanking = (
   board: Board,
   playerMove: Position,
   player: Player,
   depth: number
-): MoveAnalysis | null => {
+): MoveRankingAnalysis | null => {
   // プレイヤーの手の評価
   const validMoves = getAllValidMoves(board, player);
   const playerMoveData = validMoves.find(
@@ -184,3 +184,7 @@ export const compareMovesWithAI = (
 
   return comparison;
 };
+
+// Backward compatibility - deprecated, use analyzeMoveRanking instead
+export const analyzeBadMove = analyzeMoveRanking;
+export type MoveAnalysis = MoveRankingAnalysis;
