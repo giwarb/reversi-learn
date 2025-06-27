@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useGameWithAI } from './useGameWithAI';
 
@@ -151,9 +151,15 @@ describe('useGameWithAI', () => {
   it('AI思考中は打ち直しできない', async () => {
     const { result } = renderHook(() => useGameWithAI(true));
 
-    // 最初に手を打って、アンドゥ可能な状態にする
-    await act(async () => {
-      await result.current.makeMove({ row: 2, col: 3 });
+    // 最初に手を打つ
+    act(() => {
+      result.current.makeMove({ row: 2, col: 3 });
+    });
+
+    // AI手番が完了するまで待つ
+    await waitFor(() => {
+      expect(result.current.isAIThinking).toBe(false);
+      expect(result.current.gameState.moveHistory).toHaveLength(2); // プレイヤー + AI
     });
 
     // AI手番が終了後、プレイヤーがアンドゥ可能であることを確認

@@ -13,7 +13,7 @@ export interface GameWithAIState {
   validMoves: Position[];
   makeMove: (position: Position) => void;
   resetGame: () => void;
-  resetGameWithColor: (playerColor: Player) => void;
+  resetGameWithColor: (playerColor: Player) => Promise<void>;
   setAILevel: (level: number) => void;
   aiLevel: number;
   undoLastMove: () => void;
@@ -49,8 +49,11 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   }, [gameState.gameState, evaluation]);
 
   const makeMove = useCallback(
-    async (position: Position) => {
+    (position: Position) => {
       if (aiPlayer.isAIThinking || gameState.gameState.gameOver) return;
+
+      // AI対戦ありの場合のみ、プレイヤーの手番チェックを行う
+      if (playAgainstAI && gameState.gameState.currentPlayer !== gameState.playerColor) return;
 
       const boardBeforeMove = gameState.gameState.board;
       const currentPlayerBeforeMove = gameState.gameState.currentPlayer;
@@ -71,18 +74,7 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
         );
       }
 
-      // AIの手番
-      const aiColor = gameState.playerColor === 'black' ? 'white' : 'black';
-      if (
-        playAgainstAI &&
-        gameState.gameState.currentPlayer === aiColor &&
-        !gameState.gameState.gameOver
-      ) {
-        const aiMove = await aiPlayer.requestAIMove(gameState.gameState.board, aiColor);
-        if (aiMove) {
-          gameState.makeMove(aiMove);
-        }
-      }
+      // AI処理は useEffect で別途処理する
     },
     [gameState, aiPlayer, evaluation, playAgainstAI]
   );
@@ -94,19 +86,17 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
   }, [gameState, evaluation, gameHistory]);
 
   const resetGameWithColor = useCallback(
-    (newPlayerColor: Player) => {
+    async (newPlayerColor: Player) => {
       gameState.resetGameWithColor(newPlayerColor);
       evaluation.clearLastMoveAnalysis();
       gameHistory.reset();
 
-      // 後手（白）を選んだ場合、AIに最初の一手を打たせる（非同期実行）
+      // 後手（白）を選んだ場合、AIに最初の一手を打たせる
       if (playAgainstAI && newPlayerColor === 'white') {
-        setTimeout(async () => {
-          const aiMove = await aiPlayer.requestAIMove(gameState.gameState.board, 'black');
-          if (aiMove) {
-            gameState.makeMove(aiMove);
-          }
-        }, 0);
+        const aiMove = await aiPlayer.requestAIMove(gameState.gameState.board, 'black');
+        if (aiMove) {
+          gameState.makeMove(aiMove);
+        }
       }
     },
     [playAgainstAI, gameState, evaluation, gameHistory, aiPlayer]
@@ -149,29 +139,61 @@ export const useGameWithAI = (playAgainstAI: boolean = true): GameWithAIState =>
     [aiPlayer]
   );
 
+  // AI手番の処理
+  useEffect(() => {
+    const handleAITurn = async () => {
+      const aiColor = gameState.playerColor === 'black' ? 'white' : 'black';
+
+      if (
+        playAgainstAI &&
+        gameState.gameState.currentPlayer === aiColor &&
+        !gameState.gameState.gameOver &&
+        !aiPlayer.isAIThinking
+      ) {
+        const aiMove = await aiPlayer.requestAIMove(gameState.gameState.board, aiColor);
+        if (aiMove) {
+          gameState.makeMove(aiMove);
+        }
+      }
+    };
+
+    handleAITurn();
+  }, [
+    gameState.gameState.currentPlayer,
+    gameState.gameState.gameOver,
+    gameState.playerColor,
+    playAgainstAI,
+    aiPlayer,
+    gameState,
+  ]);
+
   // パスの処理
   useEffect(() => {
-    if (
-      gameState.validMoves.length === 0 &&
-      !gameState.gameState.gameOver &&
-      !aiPlayer.isAIThinking
-    ) {
-      const opponent = gameState.gameState.currentPlayer === 'black' ? 'white' : 'black';
-      // パス処理または ゲーム終了チェック
-      gameState.handlePass();
-      gameState.checkGameEnd();
+    const handlePassTurn = async () => {
+      if (
+        gameState.validMoves.length === 0 &&
+        !gameState.gameState.gameOver &&
+        !aiPlayer.isAIThinking
+      ) {
+        const opponent = gameState.gameState.currentPlayer === 'black' ? 'white' : 'black';
+        // パス処理または ゲーム終了チェック
+        gameState.handlePass();
+        gameState.checkGameEnd();
 
-      // パスの後、AIの手番になった場合
-      const aiColor = gameState.playerColor === 'black' ? 'white' : 'black';
-      if (playAgainstAI && opponent === aiColor) {
-        setTimeout(async () => {
+        // パスの後、AIの手番になった場合
+        const aiColor = gameState.playerColor === 'black' ? 'white' : 'black';
+        if (playAgainstAI && opponent === aiColor) {
+          // 1.5秒の遅延を入れてからAIの手を実行
+          await new Promise((resolve) => setTimeout(resolve, 1500));
           const aiMove = await aiPlayer.requestAIMove(gameState.gameState.board, aiColor);
           if (aiMove) {
             gameState.makeMove(aiMove);
           }
-        }, 1500);
+        }
       }
-    }
+    };
+
+    handlePassTurn();
   }, [gameState, aiPlayer, playAgainstAI]);
 
   return {

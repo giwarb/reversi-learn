@@ -38,14 +38,17 @@ describe('useGameWithAI - 先手・後手選択', () => {
       result.current.resetGameWithColor('white');
     });
 
-    // 黒の手を打つ（この場合は悪手検出されない）
+    expect(result.current.playerColor).toBe('white');
+
+    // まず黒の手を打つ（プレイヤーは白なので悪手検出されない）
     act(() => {
       result.current.makeMove({ row: 2, col: 3 });
     });
 
     expect(result.current.lastMoveAnalysis).toBeNull();
+    expect(result.current.gameState.currentPlayer).toBe('white');
 
-    // 白の手を打つ（この場合は悪手検出される）
+    // 白の手を打つ（プレイヤーは白なので悪手検出される）
     act(() => {
       result.current.makeMove({ row: 2, col: 2 });
     });
