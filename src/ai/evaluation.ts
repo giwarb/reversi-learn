@@ -1,3 +1,4 @@
+import { GAME_PHASE_CONSTANTS } from '../constants/ai';
 import { countPieces } from '../game/board';
 import { BOARD_SIZE } from '../game/constants';
 import { getAllValidMoves } from '../game/rules';
@@ -274,25 +275,30 @@ export const evaluateBoard = (board: Board): number => {
   const counts = countPieces(board);
   const totalPieces = counts.black + counts.white;
 
-  if (totalPieces < 20) {
+  if (totalPieces < GAME_PHASE_CONSTANTS.EARLY_GAME_THRESHOLD) {
     // Early game: Prioritize mobility and potential mobility
+    const weights = GAME_PHASE_CONSTANTS.EARLY_GAME_WEIGHTS;
     return (
-      evaluateMobility(board) * 5 +
-      evaluatePotentialMobilityScore(board) * 2 +
-      evaluateStableDiscs(board) * 1
+      evaluateMobility(board) * weights.MOBILITY +
+      evaluatePotentialMobilityScore(board) * weights.STABILITY +
+      evaluateStableDiscs(board) * weights.PIECE_COUNT
     );
-  } else if (totalPieces < 40) {
+  } else if (totalPieces < GAME_PHASE_CONSTANTS.MID_GAME_THRESHOLD) {
     // Mid game: Balanced evaluation with increased stable disc importance
+    const weights = GAME_PHASE_CONSTANTS.MID_GAME_WEIGHTS;
     return (
-      evaluateMobility(board) * 3 +
-      evaluatePotentialMobilityScore(board) * 1 +
-      evaluateStableDiscs(board) * 3 +
-      evaluatePieceCount(board) * 0.5
+      evaluateMobility(board) * weights.MOBILITY +
+      evaluatePotentialMobilityScore(board) * weights.STABILITY +
+      evaluateStableDiscs(board) * weights.PIECE_COUNT +
+      evaluatePieceCount(board) * weights.POSITION
     );
   } else {
     // End game: Prioritize stable discs and piece count
+    const weights = GAME_PHASE_CONSTANTS.LATE_GAME_WEIGHTS;
     return (
-      evaluateMobility(board) * 1 + evaluateStableDiscs(board) * 5 + evaluatePieceCount(board) * 3
+      evaluateMobility(board) * weights.PIECE_COUNT +
+      evaluateStableDiscs(board) * weights.STABILITY +
+      evaluatePieceCount(board) * weights.POSITION
     );
   }
 };

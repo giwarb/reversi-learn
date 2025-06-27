@@ -1,6 +1,7 @@
 import { type FC, useEffect, useMemo } from 'react';
 import { explainBoardEvaluation } from '../../ai/boardEvaluationExplainer';
 import { minimax } from '../../ai/minimax';
+import { EVALUATION_CONSTANTS } from '../../constants/ai';
 import type { BadMoveResult } from '../../game/badMoveDetector';
 import { getValidMove, makeMove } from '../../game/rules';
 import type { Board, Player, Position } from '../../game/types';
@@ -48,12 +49,24 @@ export const BadMoveDialog: FC<BadMoveDialogProps> = ({
 
   const playerMoveEvaluation = useMemo(() => {
     const currentPlayer = playerColor === 'black' ? 'white' : 'black';
-    return minimax(boardAfterPlayerMove, currentPlayer, depth, -1000000, 1000000);
+    return minimax(
+      boardAfterPlayerMove,
+      currentPlayer,
+      depth,
+      EVALUATION_CONSTANTS.MIN_SCORE,
+      EVALUATION_CONSTANTS.MAX_SCORE
+    );
   }, [boardAfterPlayerMove, playerColor, depth]);
 
   const aiRecommendationEvaluation = useMemo(() => {
     const currentPlayer = playerColor === 'black' ? 'white' : 'black';
-    return minimax(boardAfterAIRecommendation, currentPlayer, depth, -1000000, 1000000);
+    return minimax(
+      boardAfterAIRecommendation,
+      currentPlayer,
+      depth,
+      EVALUATION_CONSTANTS.MIN_SCORE,
+      EVALUATION_CONSTANTS.MAX_SCORE
+    );
   }, [boardAfterAIRecommendation, playerColor, depth]);
 
   const playerMoveExplanation = useMemo(

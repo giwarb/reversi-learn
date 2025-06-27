@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ReversiAI } from '../ai/ai';
+import { AI_CONSTANTS } from '../constants/ai';
 import type { Board, Player, Position } from '../game/types';
 
 export interface AIPlayerHook {
@@ -19,7 +20,7 @@ export const useAIPlayer = (): AIPlayerHook => {
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [useIterativeDeepening, setUseIterativeDeepening] = useState(false);
   const [aiThinkingDepth, setAIThinkingDepth] = useState(0);
-  const [aiTimeLimit, setAITimeLimit] = useState(5000);
+  const [aiTimeLimit, setAITimeLimit] = useState(AI_CONSTANTS.DEFAULT_TIME_LIMIT_MS);
   const [ai] = useState(() => new ReversiAI({ maxDepth: aiLevel, useIterativeDeepening: false }));
 
   const handleSetAILevel = useCallback(
@@ -75,7 +76,7 @@ export const useAIPlayer = (): AIPlayerHook => {
           setIsAIThinking(false);
           setAIThinkingDepth(0);
           resolve(move);
-        }, 500);
+        }, AI_CONSTANTS.MIN_THINKING_TIME_MS);
       });
     },
     [ai, isAIThinking, useIterativeDeepening, aiLevel]
