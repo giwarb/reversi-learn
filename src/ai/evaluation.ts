@@ -2,7 +2,8 @@ import { GAME_PHASE_CONSTANTS } from '../constants/ai';
 import { countPieces } from '../game/board';
 import { BOARD_SIZE } from '../game/constants';
 import { getAllValidMoves } from '../game/rules';
-import type { Board, Player } from '../game/types';
+import type { Board, EvaluationScore, Player } from '../game/types';
+import { createEvaluationScore } from '../game/types';
 
 /**
  * Count stable discs (stones that cannot be flipped)
@@ -209,61 +210,65 @@ const evaluatePotentialMobility = (board: Board, player: Player): number => {
  * Evaluate stable discs
  * Returns negative for black advantage, positive for white advantage
  */
-export const evaluateStableDiscs = (board: Board): number => {
+export const evaluateStableDiscs = (board: Board): EvaluationScore => {
   const blackStable = countStableDiscs(board, 'black');
   const whiteStable = countStableDiscs(board, 'white');
 
   if (blackStable + whiteStable === 0) {
-    return 0;
+    return createEvaluationScore(0);
   }
 
-  return (100 * (whiteStable - blackStable)) / (blackStable + whiteStable);
+  return createEvaluationScore((100 * (whiteStable - blackStable)) / (blackStable + whiteStable));
 };
 
 /**
  * Evaluate mobility (number of valid moves)
  * Returns negative for black advantage, positive for white advantage
  */
-export const evaluateMobility = (board: Board): number => {
+export const evaluateMobility = (board: Board): EvaluationScore => {
   const blackMoves = getAllValidMoves(board, 'black');
   const whiteMoves = getAllValidMoves(board, 'white');
 
   if (blackMoves.length + whiteMoves.length !== 0) {
-    return (
+    return createEvaluationScore(
       (100 * (whiteMoves.length - blackMoves.length)) / (blackMoves.length + whiteMoves.length)
     );
   }
 
-  return 0;
+  return createEvaluationScore(0);
 };
 
 /**
  * Evaluate potential mobility
  * Returns negative for black advantage, positive for white advantage
  */
-export const evaluatePotentialMobilityScore = (board: Board): number => {
+export const evaluatePotentialMobilityScore = (board: Board): EvaluationScore => {
   const blackPotential = evaluatePotentialMobility(board, 'black');
   const whitePotential = evaluatePotentialMobility(board, 'white');
 
   if (blackPotential + whitePotential === 0) {
-    return 0;
+    return createEvaluationScore(0);
   }
 
-  return (100 * (whitePotential - blackPotential)) / (blackPotential + whitePotential);
+  return createEvaluationScore(
+    (100 * (whitePotential - blackPotential)) / (blackPotential + whitePotential)
+  );
 };
 
 /**
  * Evaluate piece count
  * Returns negative for black advantage, positive for white advantage
  */
-export const evaluatePieceCount = (board: Board): number => {
+export const evaluatePieceCount = (board: Board): EvaluationScore => {
   const counts = countPieces(board);
 
   if (counts.black + counts.white !== 0) {
-    return (100 * (counts.white - counts.black)) / (counts.black + counts.white);
+    return createEvaluationScore(
+      (100 * (counts.white - counts.black)) / (counts.black + counts.white)
+    );
   }
 
-  return 0;
+  return createEvaluationScore(0);
 };
 
 /**
@@ -271,39 +276,39 @@ export const evaluatePieceCount = (board: Board): number => {
  * Weights different factors based on game phase
  * Returns negative for black advantage, positive for white advantage
  */
-export const evaluateBoard = (board: Board): number => {
+export const evaluateBoard = (board: Board): EvaluationScore => {
   const counts = countPieces(board);
   const totalPieces = counts.black + counts.white;
 
   if (totalPieces < GAME_PHASE_CONSTANTS.EARLY_GAME_THRESHOLD) {
     // Early game: Prioritize mobility and potential mobility
     const weights = GAME_PHASE_CONSTANTS.EARLY_GAME_WEIGHTS;
-    return (
-      evaluateMobility(board) * weights.MOBILITY +
-      evaluatePotentialMobilityScore(board) * weights.STABILITY +
-      evaluateStableDiscs(board) * weights.PIECE_COUNT
+    return createEvaluationScore(
+      (evaluateMobility(board) as number) * weights.MOBILITY +
+        (evaluatePotentialMobilityScore(board) as number) * weights.STABILITY +
+        (evaluateStableDiscs(board) as number) * weights.PIECE_COUNT
     );
   } else if (totalPieces < GAME_PHASE_CONSTANTS.MID_GAME_THRESHOLD) {
     // Mid game: Balanced evaluation with increased stable disc importance
     const weights = GAME_PHASE_CONSTANTS.MID_GAME_WEIGHTS;
-    return (
-      evaluateMobility(board) * weights.MOBILITY +
-      evaluatePotentialMobilityScore(board) * weights.STABILITY +
-      evaluateStableDiscs(board) * weights.PIECE_COUNT +
-      evaluatePieceCount(board) * weights.POSITION
+    return createEvaluationScore(
+      (evaluateMobility(board) as number) * weights.MOBILITY +
+        (evaluatePotentialMobilityScore(board) as number) * weights.STABILITY +
+        (evaluateStableDiscs(board) as number) * weights.PIECE_COUNT +
+        (evaluatePieceCount(board) as number) * weights.POSITION
     );
   } else {
     // End game: Prioritize stable discs and piece count
     const weights = GAME_PHASE_CONSTANTS.LATE_GAME_WEIGHTS;
-    return (
-      evaluateMobility(board) * weights.PIECE_COUNT +
-      evaluateStableDiscs(board) * weights.STABILITY +
-      evaluatePieceCount(board) * weights.POSITION
+    return createEvaluationScore(
+      (evaluateMobility(board) as number) * weights.PIECE_COUNT +
+        (evaluateStableDiscs(board) as number) * weights.STABILITY +
+        (evaluatePieceCount(board) as number) * weights.POSITION
     );
   }
 };
 
 // Legacy compatibility
-export const evaluatePosition = (_board: Board): number => {
-  return 0;
+export const evaluatePosition = (_board: Board): EvaluationScore => {
+  return createEvaluationScore(0);
 };
