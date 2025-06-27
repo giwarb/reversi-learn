@@ -40,20 +40,20 @@ describe('EvaluationSummary', () => {
   };
 
   it('renders evaluation scores', () => {
-    render(<EvaluationSummary playerScore={65.5} aiScore={34.5} explanation={mockExplanation} />);
+    render(<EvaluationSummary blackScore={65.5} whiteScore={34.5} explanation={mockExplanation} />);
 
-    expect(screen.getByText(/あなた: 65.5/)).toBeInTheDocument();
-    expect(screen.getByText(/AI: 34.5/)).toBeInTheDocument();
+    expect(screen.getByText(/黒: 65.5/)).toBeInTheDocument();
+    expect(screen.getByText(/白: 34.5/)).toBeInTheDocument();
   });
 
   it('shows overall assessment', () => {
-    render(<EvaluationSummary playerScore={65.5} aiScore={34.5} explanation={mockExplanation} />);
+    render(<EvaluationSummary blackScore={65.5} whiteScore={34.5} explanation={mockExplanation} />);
 
     expect(screen.getByText('テスト評価')).toBeInTheDocument();
   });
 
   it('displays board analysis section', () => {
-    render(<EvaluationSummary playerScore={65.5} aiScore={34.5} explanation={mockExplanation} />);
+    render(<EvaluationSummary blackScore={65.5} whiteScore={34.5} explanation={mockExplanation} />);
 
     expect(screen.getByText('盤面分析')).toBeInTheDocument();
   });
