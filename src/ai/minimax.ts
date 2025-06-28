@@ -253,7 +253,16 @@ export const getUnifiedBoardEvaluation = (
   if (searchDepth && searchDepth > 0) {
     const bestMove = findBestMove(board, player, searchDepth);
     if (bestMove) {
-      searchScore = bestMove.score as number;
+      // 探索結果は現在のプレイヤー視点での最善手の評価値
+      // しかし統合評価では標準的な評価値（黒視点）が期待される
+      let rawScore = bestMove.score as number;
+
+      // 白プレイヤーの場合、評価値を黒視点に変換
+      if (player === 'white') {
+        rawScore = -rawScore;
+      }
+
+      searchScore = rawScore;
     }
   }
 

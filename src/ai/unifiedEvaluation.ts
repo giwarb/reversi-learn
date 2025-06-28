@@ -227,9 +227,12 @@ export const generateEvaluationExplanation = (
   const explanations: string[] = [];
   const isPlayerBlack = player === 'black';
 
-  // 総合評価
-  const totalAdvantage = isPlayerBlack ? evaluation.totalScore < 0 : evaluation.totalScore > 0;
-  const scoreAbs = Math.abs(evaluation.totalScore);
+  // 総合評価 - プレイヤー視点での符号変換
+  // 評価値：マイナス=黒有利、プラス=白有利
+  // プレイヤー有利 = (黒プレイヤーかつマイナススコア) または (白プレイヤーかつプラススコア)
+  const playerViewScore = isPlayerBlack ? evaluation.totalScore : -evaluation.totalScore;
+  const totalAdvantage = playerViewScore < 0; // プレイヤー視点で負の値なら有利
+  const scoreAbs = Math.abs(playerViewScore);
 
   if (scoreAbs > 30) {
     explanations.push(totalAdvantage ? '✓ 総合的に大きく有利' : '× 総合的に大きく不利');
@@ -242,13 +245,17 @@ export const generateEvaluationExplanation = (
   // 機動力分析
   if (evaluation.components.mobility.weight > 0) {
     const mobility = evaluation.components.mobility;
-    if (mobility.playerAdvantage && Math.abs(mobility.score) > 20) {
+    if (mobility.playerAdvantage && Math.abs(mobility.score) > 15) {
       explanations.push(
         `✓ 着手可能数で優位（約${Math.round(mobility.rawPlayerValue)}手 vs ${Math.round(mobility.rawOpponentValue)}手）`
       );
-    } else if (!mobility.playerAdvantage && Math.abs(mobility.score) > 20) {
+    } else if (!mobility.playerAdvantage && Math.abs(mobility.score) > 15) {
       explanations.push(
         `× 着手可能数で劣勢（約${Math.round(mobility.rawPlayerValue)}手 vs ${Math.round(mobility.rawOpponentValue)}手）`
+      );
+    } else if (Math.abs(mobility.score) > 5) {
+      explanations.push(
+        `- 着手可能数は互角（約${Math.round(mobility.rawPlayerValue)}手 vs ${Math.round(mobility.rawOpponentValue)}手）`
       );
     }
   }
@@ -256,13 +263,17 @@ export const generateEvaluationExplanation = (
   // 安定性分析
   if (evaluation.components.stability.weight > 0) {
     const stability = evaluation.components.stability;
-    if (stability.playerAdvantage && Math.abs(stability.score) > 15) {
+    if (stability.playerAdvantage && Math.abs(stability.score) > 10) {
       explanations.push(
         `✓ 確定石で優位（約${Math.round(stability.rawPlayerValue)}個 vs ${Math.round(stability.rawOpponentValue)}個）`
       );
-    } else if (!stability.playerAdvantage && Math.abs(stability.score) > 15) {
+    } else if (!stability.playerAdvantage && Math.abs(stability.score) > 10) {
       explanations.push(
         `× 確定石で劣勢（約${Math.round(stability.rawPlayerValue)}個 vs ${Math.round(stability.rawOpponentValue)}個）`
+      );
+    } else if (Math.abs(stability.score) > 3) {
+      explanations.push(
+        `- 確定石は互角（約${Math.round(stability.rawPlayerValue)}個 vs ${Math.round(stability.rawOpponentValue)}個）`
       );
     }
   }

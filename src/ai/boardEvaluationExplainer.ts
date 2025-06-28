@@ -260,10 +260,16 @@ const analyzeNextMoveStrength = (board: Board, player: Player): NextMoveStrength
 export const explainBoardEvaluation = (
   board: Board,
   player: Player,
-  searchDepth?: number
+  searchDepth?: number,
+  actualEvaluationScore?: number
 ): BoardEvaluationExplanation => {
-  // 統合評価システムを使用
-  const unifiedEvaluation = performUnifiedEvaluation(board, player, searchDepth);
+  // 統合評価システムを使用 - 実際の評価値があれば使用
+  const unifiedEvaluation = performUnifiedEvaluation(
+    board,
+    player,
+    searchDepth,
+    actualEvaluationScore
+  );
 
   // 統合評価からの説明生成
   const unifiedDetails = generateEvaluationExplanation(unifiedEvaluation, player);

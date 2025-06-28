@@ -86,7 +86,13 @@ export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
             <h4>【盤面の分析】</h4>
             <div className="explanation-content">
               {(() => {
-                const explanation = explainBoardEvaluation(board, playerColor, searchDepth);
+                // 実際の評価値を使用 - プロパティで渡されたevaluationを直接使用
+                const explanation = explainBoardEvaluation(
+                  board,
+                  playerColor,
+                  searchDepth,
+                  evaluation
+                );
                 const brief = getBriefExplanation(explanation);
                 return (
                   <>
@@ -112,6 +118,9 @@ export const EvaluationDisplay: FC<EvaluationDisplayProps> = ({
                             探索深度: {explanation.unifiedEvaluation.searchDepth}手先まで読み
                           </div>
                         )}
+                        <div className="evaluation-sync">
+                          実際の評価値: {evaluation.toFixed(1)} 使用
+                        </div>
                       </div>
                     )}
                   </>
